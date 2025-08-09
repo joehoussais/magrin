@@ -407,7 +407,7 @@ function WelcomeView({ data, onChange, totals, isAdmin }: {
   const [scale, setScale] = useState(1);
   const [offset, setOffset] = useState({ x: 0, y: 0 });
   const [drag, setDrag] = useState<{ x: number; y: number } | null>(null);
-  const [donkeyTrail, setDonkeyTrail] = useState(false);
+  const [donkeyTrail, setDonkeyTrail] = useState(true);
   const [donkeyPosition, setDonkeyPosition] = useState({ x: 0, y: 0 });
   const [currentMarkerIndex, setCurrentMarkerIndex] = useState(0);
 
