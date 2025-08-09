@@ -475,47 +475,100 @@ function WelcomeView({ data, onChange, totals, isAdmin }: {
       const openaiApiKey = localStorage.getItem("openai_api_key");
       
       if (openaiApiKey) {
-        // Use real OpenAI API
-        const response = await fetch("https://api.openai.com/v1/chat/completions", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${openaiApiKey}`
-          },
-          body: JSON.stringify({
-            model: "gpt-4",
-            messages: [
-              {
-                role: "system",
-                content: "You are an enthusiastic internet detective and celebration expert! You search the web and find amazing things about people, then write super positive, funny, and celebratory profiles. Use lots of emojis, be extremely complimentary, and make people feel like absolute legends!"
-              },
-              {
-                role: "user",
-                content: `I just searched Google for "${playerOfTheMorning.name}" and found some INCREDIBLE information! 🕵️‍♂️
+        // Check if it's a Perplexity API key (starts with sk-proj-)
+        if (openaiApiKey.startsWith('sk-proj-')) {
+          // Use Perplexity API with real web search
+          const response = await fetch("https://api.perplexity.ai/chat/completions", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${openaiApiKey}`
+            },
+            body: JSON.stringify({
+              model: "llama-3.1-sonar-large-128k-online",
+              messages: [
+                {
+                  role: "system",
+                  content: "You are an enthusiastic internet detective and celebration expert! Search the web and find real information about people, then write super positive, funny, and celebratory profiles. Use lots of emojis, be extremely complimentary, and make people feel like absolute legends!"
+                },
+                {
+                  role: "user",
+                  content: `Search the web for information about "${playerOfTheMorning.name}" and write a SUPER celebratory and funny analysis about them. 
 
-                This person is a player in a team called "${teamName}" with the bio/tagline "${playerBio}". 
+                  This person is a player in a team called "${teamName}" with the bio/tagline "${playerBio}". 
 
-                Please write a SUPER celebratory and funny analysis as if you just discovered amazing things about them online. Make it sound like you found:
-                - Their legendary internet presence and fan following
-                - Their incredible achievements and hidden talents
-                - Their impact on their team and community
-                - Their future superstar potential
-                - Any funny rumors or amazing facts you "discovered"
+                  Search for:
+                  - Their online presence and achievements
+                  - Any interesting facts or news about them
+                  - Their background and talents
+                  - Their impact and reputation
 
-                Write it like a viral social media post celebrating this person. Use TONS of emojis, be extremely enthusiastic, and make them sound like an absolute legend! Make it funny, over-the-top positive, and full of compliments. Keep it under 400 words and make it feel like real internet research results! 🎉✨`
-              }
-            ],
-            max_tokens: 500,
-            temperature: 0.8
-          })
-        });
+                  Write it like a viral social media post celebrating this person. Use TONS of emojis, be extremely enthusiastic, and make them sound like an absolute legend! Make it funny, over-the-top positive, and full of compliments. Keep it under 400 words and include real information you found! 🎉✨`
+                }
+              ],
+              max_tokens: 500,
+              temperature: 0.8,
+              search_domain_filter: ["google.com", "bing.com"]
+            })
+          });
 
-        if (response.ok) {
-          const data = await response.json();
-          const aiResponse = `🕵️‍♂️ **Google Search Results for ${playerOfTheMorning.name}**\n\n${data.choices[0].message.content}`;
-          setAiSearchResult(aiResponse);
+                  if (response.ok) {
+            const data = await response.json();
+            const aiResponse = `🕵️‍♂️ **Real Web Search Results for ${playerOfTheMorning.name}**\n\n${data.choices[0].message.content}`;
+            setAiSearchResult(aiResponse);
+          } else {
+            throw new Error("Perplexity API request failed");
+          }
         } else {
-          throw new Error("OpenAI API request failed");
+          // Use OpenAI API with web search capability
+          const response = await fetch("https://api.openai.com/v1/chat/completions", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${openaiApiKey}`
+            },
+            body: JSON.stringify({
+              model: "gpt-4o",
+              messages: [
+                {
+                  role: "system",
+                  content: "You are an enthusiastic internet detective and celebration expert! Search the web and find real information about people, then write super positive, funny, and celebratory profiles. Use lots of emojis, be extremely complimentary, and make people feel like absolute legends!"
+                },
+                {
+                  role: "user",
+                  content: `Search the web for information about "${playerOfTheMorning.name}" and write a SUPER celebratory and funny analysis about them. 
+
+                  This person is a player in a team called "${teamName}" with the bio/tagline "${playerBio}". 
+
+                  Search for:
+                  - Their online presence and achievements
+                  - Any interesting facts or news about them
+                  - Their background and talents
+                  - Their impact and reputation
+
+                  Write it like a viral social media post celebrating this person. Use TONS of emojis, be extremely enthusiastic, and make them sound like an absolute legend! Make it funny, over-the-top positive, and full of compliments. Keep it under 400 words and include real information you found! 🎉✨`
+                }
+              ],
+              max_tokens: 500,
+              temperature: 0.8,
+              tools: [
+                {
+                  type: "web_search",
+                  web_search: {
+                    query: `${playerOfTheMorning.name} ${teamName} ${playerBio}`
+                  }
+                }
+              ]
+            })
+          });
+
+          if (response.ok) {
+            const data = await response.json();
+            const aiResponse = `🕵️‍♂️ **Real Web Search Results for ${playerOfTheMorning.name}**\n\n${data.choices[0].message.content}`;
+            setAiSearchResult(aiResponse);
+          } else {
+            throw new Error("OpenAI API request failed");
+          }
         }
       } else {
         // Fallback to simulated response
