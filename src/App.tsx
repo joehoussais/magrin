@@ -272,15 +272,6 @@ function TopBar({
           ))}
         </div>
         <div className="flex items-center gap-3 text-sm">
-          <span className="hidden sm:inline text-slate-500">Total:</span>
-          <div className="flex items-center gap-2">
-            {Object.entries(totals.teamTotals).map(([teamId, pts]) => (
-              <span key={teamId} className="rounded-full bg-white px-2 py-1 shadow-sm ring-1 ring-slate-200">
-                <span className="mr-1 align-middle" style={{ color: TEAM_COLOR[teamId] || "#111827" }}>●</span>
-                {pts}
-              </span>
-            ))}
-          </div>
           <button
             onClick={() => setShowAdminLogin(true)}
             className={`rounded-full px-3 py-1 text-sm transition ${
