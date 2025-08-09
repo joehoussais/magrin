@@ -200,7 +200,7 @@ export default function App() {
       <div className="mx-auto max-w-7xl px-4 pb-24">
         {tab === "welcome" && <WelcomeView data={data} onChange={setData} totals={totals} isAdmin={isAdmin} />}
         {tab === "map" && <MapView data={data} onChange={setData} />}
-        {tab === "leaderboard" && <Leaderboard data={data} onChange={setData} totals={totals as any} />}
+        {tab === "leaderboard" && <Leaderboard data={data} onChange={setData} totals={totals as any} isAdmin={isAdmin} />}
         {tab === "people" && <People data={data} onChange={setData} isAdmin={isAdmin} />}
         {tab === "info" && <Info data={data} onChange={setData} />}
         {tab === "chat" && <Chat />}
@@ -596,8 +596,9 @@ function WelcomeView({ data, onChange, totals, isAdmin }: {
                       <div className="font-medium">{team?.name || teamId}</div>
                       <div className="text-sm text-slate-500">
                         {data.events.map(e => {
+                          const score = data.scores.byTeamEvent?.[teamId]?.[e.id] ?? 0;
                           const power = totals.teamPowers[teamId]?.[e.id] ?? 0;
-                          return `${e.emoji} ${power}`;
+                          return `${e.emoji} ${score} (power: ${power})`;
                         }).join(" • ")}
                       </div>
                     </div>
@@ -903,7 +904,8 @@ function computeTotals(data: DataModel) {
   const teamPowers: Record<string, Record<string, number>> = {};
   
   for (const t of data.teams) {
-    let sum = 0;
+    let scoreSum = 0;
+    let powerSum = 0;
     teamPowers[t.id] = {};
     
     for (const e of data.events) {
@@ -914,15 +916,19 @@ function computeTotals(data: DataModel) {
       }, 0);
       
       teamPowers[t.id][e.id] = teamPower;
-      sum += teamPower * (e.weight || 1);
+      powerSum += teamPower * (e.weight || 1);
+      
+      // Get actual competition score for this event
+      const score = data.scores.byTeamEvent?.[t.id]?.[e.id] ?? 0;
+      scoreSum += score;
     }
-    teamTotals[t.id] = sum;
+    teamTotals[t.id] = scoreSum; // Use actual competition scores, not team powers
   }
   
   return { teamTotals, teamPowers };
 }
 
-function Leaderboard({ data, onChange, totals }: { data: DataModel; onChange: (d: DataModel) => void; totals: { teamTotals: Record<string, number>; teamPowers: Record<string, Record<string, number>> } }) {
+function Leaderboard({ data, onChange, totals, isAdmin }: { data: DataModel; onChange: (d: DataModel) => void; totals: { teamTotals: Record<string, number>; teamPowers: Record<string, Record<string, number>> }; isAdmin: boolean }) {
   function setPoints(teamId: string, eventId: string, value: number) {
     const next = ensureScoreMap(structuredClone(data));
     next.scores.byTeamEvent[teamId][eventId] = value;
@@ -938,7 +944,7 @@ function Leaderboard({ data, onChange, totals }: { data: DataModel; onChange: (d
     <div className="grid gap-6 md:grid-cols-3">
       {/* Score table */}
       <div className="md:col-span-2 rounded-2xl border bg-white p-4 shadow-sm">
-        <h2 className="mb-4 text-lg font-semibold">Team Powers</h2>
+        <h2 className="mb-4 text-lg font-semibold">Competition Scores</h2>
         <div className="overflow-x-auto">
           <table className="min-w-full text-sm">
             <thead>
@@ -947,7 +953,7 @@ function Leaderboard({ data, onChange, totals }: { data: DataModel; onChange: (d
                 {data.events.map((e) => (
                   <th key={e.id} className="p-2">
                     {e.emoji} {e.name}
-                    <div className="text-xs text-slate-500">Power</div>
+                    <div className="text-xs text-slate-500">Score</div>
                   </th>
                 ))}
                 <th className="p-2">Total</th>
@@ -963,15 +969,32 @@ function Leaderboard({ data, onChange, totals }: { data: DataModel; onChange: (d
                     {t.name}
                   </td>
                   {data.events.map((e) => {
+                    const score = data.scores.byTeamEvent?.[t.id]?.[e.id] ?? 0;
                     const power = totals.teamPowers[t.id]?.[e.id] ?? 0;
                     const teamMembers = data.people.filter(p => p.teamId === t.id);
                     return (
                       <td key={e.id} className="p-2">
                         <div className="text-center">
-                          <div className="font-semibold text-lg">{power}</div>
+                          <div className="font-semibold text-lg">{score}</div>
                           <div className="text-xs text-slate-500">
-                            {teamMembers.length} player{teamMembers.length !== 1 ? 's' : ''}
+                            Power: {power} ({teamMembers.length} players)
                           </div>
+                          {isAdmin && (
+                            <div className="mt-1 flex gap-1 justify-center">
+                              <button 
+                                className="w-6 h-6 rounded bg-red-100 text-red-600 hover:bg-red-200 text-xs"
+                                onClick={() => inc(t.id, e.id, -1)}
+                              >
+                                -
+                              </button>
+                              <button 
+                                className="w-6 h-6 rounded bg-green-100 text-green-600 hover:bg-green-200 text-xs"
+                                onClick={() => inc(t.id, e.id, 1)}
+                              >
+                                +
+                              </button>
+                            </div>
+                          )}
                         </div>
                       </td>
                     );
