@@ -172,10 +172,22 @@ const DEFAULT_DATA: DataModel = {
 // Utility to deep-merge score map defaults
 function ensureScoreMap(data: DataModel): DataModel {
   const copy: DataModel = JSON.parse(JSON.stringify(data));
+  
+  // Ensure scores exist
   for (const t of copy.teams) {
     if (!copy.scores.byTeamEvent[t.id]) copy.scores.byTeamEvent[t.id] = {};
     for (const e of copy.events) if (copy.scores.byTeamEvent[t.id][e.id] == null) copy.scores.byTeamEvent[t.id][e.id] = 0;
   }
+  
+  // Ensure chat exists
+  if (!copy.chat) {
+    copy.chat = {
+      messages: [
+        { id: "welcome", name: "System", text: "Welcome to Magrin Week chat! Everyone can send messages here.", ts: Date.now() },
+      ],
+    };
+  }
+  
   return copy;
 }
 
