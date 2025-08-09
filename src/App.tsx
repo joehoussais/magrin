@@ -468,24 +468,112 @@ function WelcomeView({ data, onChange, totals, isAdmin }: {
     setAiSearchResult("");
     
     try {
-      // For now, use simulated response to avoid API issues
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // Check for OpenAI API key
+      const openaiApiKey = localStorage.getItem("openai_api_key");
+      
+      if (!openaiApiKey) {
+        setAiSearchResult("🔑 **No API Key Found!**\n\nTo use real web search:\n1. Get an OpenAI API key from https://platform.openai.com\n2. Open browser console (F12)\n3. Run: `localStorage.setItem('openai_api_key', 'your-key-here')`\n4. Refresh and try again!");
+        return;
+      }
       
       const teamName = data.teams.find(t => t.id === playerOfTheMorning.teamId)?.name || "their team";
       const playerBio = playerOfTheMorning.bio || "a legendary player";
       
-      const aiResponse = `🕵️‍♂️ **AI Search Results for ${playerOfTheMorning.name}**\n\n` +
-        `Based on my analysis, ${playerOfTheMorning.name} is absolutely incredible! Here's why:\n\n` +
+      // Try real OpenAI web search first
+      try {
+        const response = await fetch("https://api.openai.com/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${openaiApiKey}`
+          },
+          body: JSON.stringify({
+            model: "gpt-4o",
+            messages: [
+              {
+                role: "system",
+                content: "You are an enthusiastic internet detective and celebration expert! Search the web and find real information about people, then write super positive, funny, and celebratory profiles. Use lots of emojis, be extremely complimentary, and make people feel like absolute legends!"
+              },
+              {
+                role: "user",
+                content: `Search the web for information about "${playerOfTheMorning.name}" and write a SUPER celebratory and funny analysis about them. 
+
+                This person is a player in a team called "${teamName}" with the bio/tagline "${playerBio}". 
+
+                Search for:
+                - Their online presence and achievements
+                - Any interesting facts or news about them
+                - Their background and talents
+                - Their impact and reputation
+
+                Write it like a viral social media post celebrating this person. Use TONS of emojis, be extremely enthusiastic, and make them sound like an absolute legend! Make it funny, over-the-top positive, and full of compliments. Keep it under 400 words and include real information you found! 🎉✨`
+              }
+            ],
+            max_tokens: 500,
+            temperature: 0.8,
+            tools: [
+              {
+                type: "web_search",
+                web_search: {
+                  query: `${playerOfTheMorning.name}`
+                }
+              }
+            ]
+          })
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          const aiResponse = `🕵️‍♂️ **Real Web Search Results for ${playerOfTheMorning.name}**\n\n${data.choices[0].message.content}`;
+          setAiSearchResult(aiResponse);
+          return; // Success! Exit early
+        } else {
+          const errorData = await response.json().catch(() => ({}));
+          console.error("OpenAI API error:", response.status, errorData);
+          
+          if (response.status === 401) {
+            throw new Error("Invalid API key - please check your OpenAI API key");
+          } else if (response.status === 429) {
+            throw new Error("Rate limit exceeded - please try again later");
+          } else if (response.status === 402) {
+            throw new Error("Payment required - please add credits to your OpenAI account");
+          } else {
+            throw new Error(`API error (${response.status}): ${errorData.error?.message || 'Unknown error'}`);
+          }
+        }
+      } catch (apiError: any) {
+        console.error("OpenAI API call failed:", apiError);
+        
+        // Show specific error message
+        if (apiError.message.includes("Failed to fetch")) {
+          throw new Error("Network error - check your internet connection");
+        } else if (apiError.message.includes("Invalid API key")) {
+          throw new Error("🔑 Invalid API key! Please check your OpenAI API key in the browser console.");
+        } else if (apiError.message.includes("Payment required")) {
+          throw new Error("💳 Payment required! Please add credits to your OpenAI account.");
+        } else if (apiError.message.includes("Rate limit")) {
+          throw new Error("⏰ Rate limit exceeded! Please wait a moment and try again.");
+        } else {
+          throw apiError; // Re-throw for fallback
+        }
+      }
+      
+    } catch (error: any) {
+      console.error("AI search error:", error);
+      
+      // Fallback to simulated response with error context
+      const teamName = data.teams.find(t => t.id === playerOfTheMorning.teamId)?.name || "their team";
+      const playerBio = playerOfTheMorning.bio || "a legendary player";
+      
+      const fallbackResponse = `🤖 **AI Search Results for ${playerOfTheMorning.name}**\n\n` +
+        `⚠️ **Note**: ${error.message}\n\n` +
         `🌟 **Legendary Status**: ${playerOfTheMorning.name} has achieved mythical status in the Magrin community. Their ${playerBio} reputation precedes them wherever they go.\n\n` +
         `🏆 **Team Impact**: As a key member of ${teamName}, ${playerOfTheMorning.name} brings unmatched energy and strategic brilliance to every competition.\n\n` +
         `💫 **Unique Talents**: ${playerOfTheMorning.name} possesses that rare combination of skill, charisma, and determination that makes them impossible to ignore.\n\n` +
         `🎯 **Future Legend**: Sources indicate that ${playerOfTheMorning.name} is destined for greatness, with their name already being whispered in the halls of Magrin legends.\n\n` +
         `*This AI-powered analysis confirms what we all knew: ${playerOfTheMorning.name} is truly extraordinary!* ✨`;
       
-      setAiSearchResult(aiResponse);
-    } catch (error: any) {
-      console.error("AI search error:", error);
-      setAiSearchResult("🤖 AI search temporarily unavailable. But we know they're amazing!");
+      setAiSearchResult(fallbackResponse);
     } finally {
       setIsSearching(false);
     }
