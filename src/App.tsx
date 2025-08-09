@@ -487,19 +487,22 @@ function WelcomeView({ data, onChange, totals, isAdmin }: {
             messages: [
               {
                 role: "system",
-                content: "You are a fun, enthusiastic sports analyst who creates engaging, positive profiles about players. Use emojis and be creative!"
+                content: "You are an enthusiastic internet detective and celebration expert! You search the web and find amazing things about people, then write super positive, funny, and celebratory profiles. Use lots of emojis, be extremely complimentary, and make people feel like absolute legends!"
               },
               {
                 role: "user",
-                content: `Create a fun, engaging AI analysis about ${playerOfTheMorning.name}, who is a player in a team called "${teamName}" with the bio/tagline "${playerBio}". 
-                
-                Make it sound like you searched the internet and found amazing things about them. Include:
-                - Their legendary status
-                - Their team impact
-                - Their unique talents
-                - Their future potential
-                
-                Use emojis, be enthusiastic, and make it feel like a real AI-powered analysis. Keep it under 300 words.`
+                content: `I just searched Google for "${playerOfTheMorning.name}" and found some INCREDIBLE information! 🕵️‍♂️
+
+                This person is a player in a team called "${teamName}" with the bio/tagline "${playerBio}". 
+
+                Please write a SUPER celebratory and funny analysis as if you just discovered amazing things about them online. Make it sound like you found:
+                - Their legendary internet presence and fan following
+                - Their incredible achievements and hidden talents
+                - Their impact on their team and community
+                - Their future superstar potential
+                - Any funny rumors or amazing facts you "discovered"
+
+                Write it like a viral social media post celebrating this person. Use TONS of emojis, be extremely enthusiastic, and make them sound like an absolute legend! Make it funny, over-the-top positive, and full of compliments. Keep it under 400 words and make it feel like real internet research results! 🎉✨`
               }
             ],
             max_tokens: 500,
@@ -509,7 +512,7 @@ function WelcomeView({ data, onChange, totals, isAdmin }: {
 
         if (response.ok) {
           const data = await response.json();
-          const aiResponse = `🔍 **AI Search Results for ${playerOfTheMorning.name}**\n\n${data.choices[0].message.content}`;
+          const aiResponse = `🕵️‍♂️ **Google Search Results for ${playerOfTheMorning.name}**\n\n${data.choices[0].message.content}`;
           setAiSearchResult(aiResponse);
         } else {
           throw new Error("OpenAI API request failed");
@@ -624,7 +627,7 @@ function WelcomeView({ data, onChange, totals, isAdmin }: {
                     : "bg-gradient-to-r from-purple-600 to-blue-600 text-white hover:from-purple-700 hover:to-blue-700"
                 }`}
               >
-                {isSearching ? "🔍 Searching..." : "🤖 AI Search Player"}
+                {isSearching ? "🔍 Searching Google..." : "🕵️‍♂️ Google Search Player"}
               </button>
             </div>
 
