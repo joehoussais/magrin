@@ -221,6 +221,7 @@ export default function App() {
       />
       <div className="mx-auto max-w-7xl px-4 pb-24">
         {tab === "welcome" && <WelcomeView data={data} onChange={setData} totals={totals} isAdmin={isAdmin} />}
+        {tab === "teams" && <TeamsView data={data} onChange={setData} totals={totals} isAdmin={isAdmin} />}
         {tab === "map" && <MapView data={data} onChange={setData} />}
         {tab === "leaderboard" && <Leaderboard data={data} onChange={setData} totals={totals as any} isAdmin={isAdmin} />}
         {tab === "people" && <People data={data} onChange={setData} isAdmin={isAdmin} />}
@@ -244,7 +245,7 @@ export default function App() {
 
 // ---------- Tabs
 
-type TabKey = "welcome" | "map" | "leaderboard" | "people" | "info" | "chat" | "settings";
+type TabKey = "welcome" | "teams" | "map" | "leaderboard" | "people" | "info" | "chat" | "settings";
 
 function TopBar({ 
   tab, 
@@ -265,6 +266,7 @@ function TopBar({
 }) {
   const tabs: { key: TabKey; label: string; emoji: string }[] = [
     { key: "welcome", label: "Welcome", emoji: "🏠" },
+    { key: "teams", label: "Teams", emoji: "👥" },
     { key: "leaderboard", label: "T-E-R", emoji: "🏆" },
     { key: "map", label: "Map", emoji: "🗺️" },
     { key: "people", label: "People", emoji: "🧑‍🌾" },
@@ -691,6 +693,105 @@ function useLocalData() {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
   }, [data]);
   return [data, setData] as const;
+}
+
+// ---------- Teams
+
+function TeamsView({ data, onChange, totals, isAdmin }: { 
+  data: DataModel; 
+  onChange: (d: DataModel) => void; 
+  totals: { teamTotals: Record<string, number>; teamPowers: Record<string, Record<string, number>>; eventTotals: Record<string, Record<string, number>> };
+  isAdmin: boolean;
+}) {
+  return (
+    <div className="space-y-6">
+      <div className="text-center">
+        <h1 className="text-3xl font-bold text-slate-800 mb-2">👥 Team Profiles</h1>
+        <p className="text-slate-600">Meet the teams competing in Magrin Week</p>
+      </div>
+      
+      <div className="grid gap-6 md:grid-cols-3">
+        {data.teams.map((team) => {
+          const teamMembers = data.people.filter(p => p.teamId === team.id);
+          const teamPower = Object.values(totals.teamPowers[team.id] || {}).reduce((sum, power) => sum + power, 0);
+          const teamScore = totals.teamTotals[team.id] || 0;
+          
+          return (
+            <div key={team.id} className="rounded-2xl border bg-white p-6 shadow-sm">
+              <div className="text-center mb-4">
+                <div className="text-4xl mb-2" style={{ color: team.color }}>●</div>
+                <h2 className="text-xl font-bold" style={{ color: team.color }}>{team.name}</h2>
+              </div>
+              
+              <div className="space-y-4">
+                {/* Team Stats */}
+                <div className="grid grid-cols-2 gap-4 text-center">
+                  <div className="rounded-lg bg-slate-50 p-3">
+                    <div className="text-2xl font-bold text-slate-800">{teamPower}</div>
+                    <div className="text-xs text-slate-600">Total Power</div>
+                  </div>
+                  <div className="rounded-lg bg-slate-50 p-3">
+                    <div className="text-2xl font-bold text-slate-800">{teamScore}</div>
+                    <div className="text-xs text-slate-600">Competition Score</div>
+                  </div>
+                </div>
+                
+                {/* Team Members */}
+                <div>
+                  <h3 className="font-semibold mb-2 text-slate-700">Team Members ({teamMembers.length})</h3>
+                  <div className="space-y-2">
+                    {teamMembers.map((member) => (
+                      <div key={member.id} className="flex items-center gap-3 rounded-lg border p-2">
+                        <span className="text-xl">{member.emoji || "🙂"}</span>
+                        <div className="flex-1">
+                          <div className="font-medium text-sm">{member.name}</div>
+                          {member.bio && (
+                            <div className="text-xs text-slate-500">{member.bio}</div>
+                          )}
+                        </div>
+                        <div className="text-right">
+                          <div className="text-xs font-medium text-slate-600">
+                            {data.events.map(event => (
+                              <span key={event.id} className="mr-1">
+                                {event.emoji}{member.ratings?.[event.id] || 0}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                
+                {/* Event Powers */}
+                <div>
+                  <h3 className="font-semibold mb-2 text-slate-700">Event Powers</h3>
+                  <div className="space-y-2">
+                    {data.events.map((event) => {
+                      const power = totals.teamPowers[team.id]?.[event.id] || 0;
+                      const score = totals.eventTotals[team.id]?.[event.id] || 0;
+                      return (
+                        <div key={event.id} className="flex items-center justify-between rounded-lg border p-2">
+                          <div className="flex items-center gap-2">
+                            <span className="text-lg">{event.emoji}</span>
+                            <span className="font-medium">{event.name}</span>
+                          </div>
+                          <div className="text-right">
+                            <div className="text-sm font-bold">{power} power</div>
+                            <div className="text-xs text-slate-500">{score}/50 points</div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
 }
 
 // ---------- Map View with simple pan / zoom and editable markers
