@@ -54,6 +54,9 @@ type DataModel = {
     places: { title: string; body: string; emoji?: string }[];
     notices: { title: string; body: string; emoji?: string; date?: string }[];
   };
+  chat: {
+    messages: { id: string; name: string; text: string; ts: number }[];
+  };
 };
 
 const STORAGE_KEY = "magrin_app_state_v1";
@@ -159,6 +162,11 @@ const DEFAULT_DATA: DataModel = {
     ],
     notices: [{ title: "Welcome", body: "Pick a team, set your name in Chat, have fun.", emoji: "👋", date: new Date().toISOString().slice(0, 10) }],
   },
+  chat: {
+    messages: [
+      { id: "welcome", name: "System", text: "Welcome to Magrin Week chat! Everyone can send messages here.", ts: Date.now() },
+    ],
+  },
 };
 
 // Utility to deep-merge score map defaults
@@ -205,7 +213,7 @@ export default function App() {
         {tab === "leaderboard" && <Leaderboard data={data} onChange={setData} totals={totals as any} isAdmin={isAdmin} />}
         {tab === "people" && <People data={data} onChange={setData} isAdmin={isAdmin} />}
         {tab === "info" && <Info data={data} onChange={setData} />}
-        {tab === "chat" && <Chat />}
+        {tab === "chat" && <Chat data={data} onChange={setData} />}
         {tab === "settings" && <Settings data={data} onChange={setData} isAdmin={isAdmin} />}
       </div>
       <Footer />
@@ -1580,28 +1588,25 @@ function InfoColumn({ title, subtitle, items, onAdd, onDelete }: {
 
 // ---------- Chat (local only)
 
-function Chat() {
+function Chat({ data, onChange }: { data: DataModel; onChange: (d: DataModel) => void }) {
   const [name, setName] = useState<string>(() => localStorage.getItem("magrin_username") || "");
   const [text, setText] = useState("");
-  const [msgs, setMsgs] = useState<{ id: string; name: string; text: string; ts: number }[]>(() => {
-    try {
-      const raw = localStorage.getItem("magrin_chat_v1");
-      if (raw) return JSON.parse(raw);
-    } catch {}
-    return [];
-  });
 
   useEffect(() => {
     localStorage.setItem("magrin_username", name);
   }, [name]);
-  useEffect(() => {
-    localStorage.setItem("magrin_chat_v1", JSON.stringify(msgs));
-  }, [msgs]);
 
   function send() {
     if (!text.trim()) return;
     const id = Math.random().toString(36).slice(2, 8);
-    setMsgs((m) => [...m, { id, name: name || "Anon", text: text.trim(), ts: Date.now() }]);
+    const newMessage = { id, name: name || "Anon", text: text.trim(), ts: Date.now() };
+    onChange({
+      ...data,
+      chat: {
+        ...data.chat,
+        messages: [...data.chat.messages, newMessage]
+      }
+    });
     setText("");
   }
 
@@ -1613,8 +1618,8 @@ function Chat() {
         <div className="sm:col-span-2" />
       </div>
       <div className="mb-3 h-72 overflow-y-auto rounded border bg-slate-50 p-3">
-        {msgs.length === 0 && <div className="text-sm text-slate-500">No messages yet.</div>}
-        {msgs.map((m) => (
+        {data.chat.messages.length === 0 && <div className="text-sm text-slate-500">No messages yet.</div>}
+        {data.chat.messages.map((m) => (
           <div key={m.id} className="mb-2">
             <span className="mr-2 font-medium">{m.name}</span>
             <span className="text-xs text-slate-400">{new Date(m.ts).toLocaleTimeString()}</span>
@@ -1628,7 +1633,7 @@ function Chat() {
           Send
         </button>
       </div>
-      <div className="mt-2 text-xs text-slate-500">Local only. To make it live between devices, we can wire a backend later.</div>
+      <div className="mt-2 text-xs text-slate-500">💬 Shared chat - messages appear for everyone! Set your name above to start chatting.</div>
     </div>
   );
 }
