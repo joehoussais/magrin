@@ -69,7 +69,7 @@ const DEFAULT_DATA: DataModel = {
   map: {
     imageUrl: "/magrin-app-enlarged.png", // ✅ updated to use enlarged version
     markers: [
-      { id: "swamp", name: "Shrek’s swamp", emoji: "🪵", type: "place", x: 16, y: 20, description: "No bread for the ogre." },
+      { id: "swamp", name: "Shrek's swamp", emoji: "🪵", type: "place", x: 16, y: 20, description: "No bread for the ogre." },
       { id: "main-house", name: "Main house", emoji: "🏠", type: "place", x: 38, y: 33, description: "Kitchen, salon, board games." },
       { id: "pool", name: "Olympic pool", emoji: "🏊", type: "fun", x: 35, y: 53, description: "Sunbeds; shade after 16:00." },
       { id: "dining", name: "Dining hall", emoji: "🍽️", type: "place", x: 52, y: 55, description: "Group meals & briefings." },
@@ -418,28 +418,58 @@ function WelcomeView({ data, onChange, totals, isAdmin }: {
   totals: { teamTotals: Record<string, number>; teamPowers: Record<string, Record<string, number>>; eventTotals: Record<string, Record<string, number>> };
   isAdmin: boolean;
 }) {
+  // Generate a random player of the morning
+  const [playerOfTheMorning] = useState(() => {
+    const players = data.people.filter(p => p.teamId); // Only players with teams
+    if (players.length === 0) return null;
+    
+    // Use date to ensure same player for the day
+    const today = new Date().toDateString();
+    const seed = today.split('').reduce((a, b) => a + b.charCodeAt(0), 0);
+    const randomIndex = seed % players.length;
+    return players[randomIndex];
+  });
+
+  // Generate a quote for the player
+  const [playerQuote] = useState(() => {
+    if (!playerOfTheMorning) return "";
+    
+    const quotes = [
+      `"${playerOfTheMorning.name} brings the energy that makes Magrin Week legendary!"`,
+      `"When ${playerOfTheMorning.name} shows up, the competition gets real."`,
+      `"${playerOfTheMorning.name} - the secret weapon every team wishes they had."`,
+      `"Legend says ${playerOfTheMorning.name} never loses a game of spirit."`,
+      `"${playerOfTheMorning.name} doesn't just play, they inspire."`,
+      `"The morning belongs to ${playerOfTheMorning.name} and their unstoppable vibe."`,
+      `"${playerOfTheMorning.name} - where talent meets determination."`,
+      `"Every team needs a ${playerOfTheMorning.name} to reach greatness."`,
+      `"${playerOfTheMorning.name} makes every moment count."`,
+      `"The spirit of Magrin lives in ${playerOfTheMorning.name}."`
+    ];
+    
+    // Use player name to ensure same quote for the day
+    const seed = playerOfTheMorning.name.split('').reduce((a, b) => a + b.charCodeAt(0), 0);
+    const quoteIndex = seed % quotes.length;
+    return quotes[quoteIndex];
+  });
+
   const containerRef = useRef<HTMLDivElement>(null);
   const [scale, setScale] = useState(1);
   const [offset, setOffset] = useState({ x: 0, y: 0 });
   const [drag, setDrag] = useState<{ x: number; y: number } | null>(null);
   const [donkeyTrail, setDonkeyTrail] = useState(true);
-  const [donkeyPosition, setDonkeyPosition] = useState({ x: 0, y: 0 });
   const [currentMarkerIndex, setCurrentMarkerIndex] = useState(0);
+  const [donkeyPosition, setDonkeyPosition] = useState({ x: 0, y: 0 });
 
-  // Mouse wheel zoom
   function onWheel(e: React.WheelEvent) {
     e.preventDefault();
-    const delta = -e.deltaY;
-    const factor = delta > 0 ? 1.1 : 0.9;
-    const newScale = clamp(scale * factor, 0.3, 5);
+    const delta = e.deltaY > 0 ? 0.9 : 1.1;
+    const newScale = clamp(scale * delta, 0.3, 5);
     setScale(newScale);
   }
 
-  // Drag to pan
   function onMouseDown(e: React.MouseEvent) {
-    if (e.button !== 0) return;
-    const el = containerRef.current;
-    if (!el) return;
+    e.preventDefault();
     setDrag({ x: e.clientX - offset.x, y: e.clientY - offset.y });
   }
 
@@ -482,182 +512,203 @@ function WelcomeView({ data, onChange, totals, isAdmin }: {
   }, [donkeyTrail, data.map.markers]);
 
   return (
-    <div className="grid gap-6 lg:grid-cols-2">
-      {/* Map Section */}
-      <div className="rounded-2xl border bg-white p-4 shadow-sm">
-        <h2 className="mb-4 text-lg font-semibold">Map</h2>
-        <div className="flex items-center justify-between gap-2 p-2">
-          <div className="text-sm text-slate-600">
-            <span className="font-medium">Zoom: {Math.round(scale * 100)}%</span>
-            <span className="ml-2 text-xs text-slate-400">
-              Scroll to zoom • Drag to pan • Double-click to reset
-            </span>
-          </div>
-          <div className="flex items-center gap-2">
-            <button 
-              className="rounded-full border px-3 py-1 text-sm hover:bg-slate-50 transition-colors" 
-              onClick={() => {
-                const newScale = clamp(scale * 1.2, 0.3, 5);
-                setScale(newScale);
-              }}
-              title="Zoom In"
-            >
-              🔍+
-            </button>
-            <button 
-              className="rounded-full border px-3 py-1 text-sm hover:bg-slate-50 transition-colors" 
-              onClick={() => {
-                const newScale = clamp(scale * 0.8, 0.3, 5);
-                setScale(newScale);
-              }}
-              title="Zoom Out"
-            >
-              🔍−
-            </button>
-            <button
-              className="rounded-full border px-3 py-1 text-sm hover:bg-slate-50 transition-colors"
-              onClick={() => {
-                setScale(1);
-                setOffset({ x: 0, y: 0 });
-              }}
-              title="Reset View"
-            >
-              🏠
-            </button>
-            <button
-              className={`rounded-full border px-3 py-1 text-sm transition-colors ${
-                donkeyTrail 
-                  ? "bg-orange-600 text-white hover:bg-orange-700" 
-                  : "hover:bg-slate-50"
-              }`}
-              onClick={() => setDonkeyTrail(!donkeyTrail)}
-              title="Toggle Donkey Trail"
-            >
-              🐴
-            </button>
+    <div className="space-y-6">
+      {/* Player of the Morning */}
+      {playerOfTheMorning && (
+        <div className="rounded-2xl border bg-gradient-to-r from-amber-50 to-orange-50 p-6 shadow-sm">
+          <div className="text-center">
+            <div className="mb-2 text-sm font-medium text-amber-700">🌟 Player of the Morning</div>
+            <div className="mb-4 flex items-center justify-center gap-3">
+              <span className="text-4xl">{playerOfTheMorning.emoji || "🙂"}</span>
+              <div>
+                <div className="text-xl font-bold text-slate-800">{playerOfTheMorning.name}</div>
+                <div className="text-sm text-slate-600">
+                  {data.teams.find(t => t.id === playerOfTheMorning.teamId)?.name}
+                  {playerOfTheMorning.bio && ` • ${playerOfTheMorning.bio}`}
+                </div>
+              </div>
+            </div>
+            <div className="text-lg italic text-slate-700">{playerQuote}</div>
+            <div className="mt-3 text-xs text-slate-500">
+              Changes daily • Based on today's date
+            </div>
           </div>
         </div>
-        <div
-          ref={containerRef}
-          onWheel={onWheel}
-          onMouseDown={onMouseDown}
-          onMouseMove={onMouseMove}
-          onMouseUp={onMouseUp}
-          onDoubleClick={onDoubleClick}
-          className="relative h-[60vh] w-full overflow-hidden rounded-xl border bg-slate-50 cursor-grab active:cursor-grabbing"
-        >
-          <div
-            className="absolute left-1/2 top-1/2"
-            style={{ transform: `translate(-50%, -50%) translate(${offset.x}px, ${offset.y}px) scale(${scale})`, transformOrigin: "center" }}
-          >
-            <div className="relative">
-              {data.map.imageUrl ? (
-                <img
-                  src={data.map.imageUrl}
-                  alt="Magrin map"
-                  className="select-none rounded-lg shadow pointer-events-none"
-                  draggable={false}
-                  style={{ 
-                    maxHeight: "70vh", 
-                    maxWidth: "80vw", 
-                    width: "auto", 
-                    height: "auto",
-                    display: "block"
-                  }}
-                />
-              ) : (
-                <div className="text-center">
-                  <div className="text-6xl">🌳🏡🐔</div>
-                  <p className="mt-2 text-sm text-slate-600">No map yet. Add one in Settings.</p>
-                </div>
-              )}
-              {/* Markers */}
-              {data.map.markers.map((m) => (
-                <button
-                  key={m.id}
-                  className="absolute -translate-x-1/2 -translate-y-full rounded-lg border bg-white/95 px-2 py-1 text-xs shadow-lg hover:scale-105 transition-all duration-200"
-                  style={{ left: `${m.x}%`, top: `${m.y}%` }}
-                >
-                  <span className="mr-1">{m.emoji || "📍"}</span>
-                  {m.name}
-                </button>
-              ))}
-              
-              {/* Donkey - always visible, animated when trail is active */}
-              <div
-                className={`absolute -translate-x-1/2 -translate-y-full transition-all duration-1000 ease-in-out ${
-                  donkeyTrail ? "animate-bounce" : ""
-                }`}
-                style={{ left: `${donkeyPosition.x}%`, top: `${donkeyPosition.y}%` }}
+      )}
+      
+      <div className="grid gap-6 lg:grid-cols-2">
+        {/* Map Section */}
+        <div className="rounded-2xl border bg-white p-4 shadow-sm">
+          <h2 className="mb-4 text-lg font-semibold">Map</h2>
+          <div className="flex items-center justify-between gap-2 p-2">
+            <div className="text-sm text-slate-600">
+              <span className="font-medium">Zoom: {Math.round(scale * 100)}%</span>
+              <span className="ml-2 text-xs text-slate-400">
+                Scroll to zoom • Drag to pan • Double-click to reset
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <button 
+                className="rounded-full border px-3 py-1 text-sm hover:bg-slate-50 transition-colors" 
+                onClick={() => {
+                  const newScale = clamp(scale * 1.2, 0.3, 5);
+                  setScale(newScale);
+                }}
+                title="Zoom In"
               >
-                <img
-                  src="/donkey.png"
-                  alt="Donkey"
-                  className="h-12 w-12"
-                  style={{ filter: "drop-shadow(0 4px 8px rgba(0,0,0,0.3))" }}
-                />
+                🔍+
+              </button>
+              <button 
+                className="rounded-full border px-3 py-1 text-sm hover:bg-slate-50 transition-colors" 
+                onClick={() => {
+                  const newScale = clamp(scale * 0.8, 0.3, 5);
+                  setScale(newScale);
+                }}
+                title="Zoom Out"
+              >
+                🔍−
+              </button>
+              <button
+                className="rounded-full border px-3 py-1 text-sm hover:bg-slate-50 transition-colors"
+                onClick={() => {
+                  setScale(1);
+                  setOffset({ x: 0, y: 0 });
+                }}
+                title="Reset View"
+              >
+                🏠
+              </button>
+              <button
+                className={`rounded-full border px-3 py-1 text-sm transition-colors ${
+                  donkeyTrail 
+                    ? "bg-orange-600 text-white hover:bg-orange-700" 
+                    : "hover:bg-slate-50"
+                }`}
+                onClick={() => setDonkeyTrail(!donkeyTrail)}
+                title="Toggle Donkey Trail"
+              >
+                🐴
+              </button>
+            </div>
+          </div>
+          <div
+            ref={containerRef}
+            onWheel={onWheel}
+            onMouseDown={onMouseDown}
+            onMouseMove={onMouseMove}
+            onMouseUp={onMouseUp}
+            onDoubleClick={onDoubleClick}
+            className="relative h-[60vh] w-full overflow-hidden rounded-xl border bg-slate-50 cursor-grab active:cursor-grabbing"
+          >
+            <div
+              className="absolute left-1/2 top-1/2"
+              style={{ transform: `translate(-50%, -50%) translate(${offset.x}px, ${offset.y}px) scale(${scale})`, transformOrigin: "center" }}
+            >
+              <div className="relative">
+                {data.map.imageUrl ? (
+                  <img
+                    src={data.map.imageUrl}
+                    alt="Magrin map"
+                    className="select-none rounded-lg shadow pointer-events-none"
+                    draggable={false}
+                    style={{ 
+                      maxHeight: "70vh", 
+                      maxWidth: "80vw", 
+                      width: "auto", 
+                      height: "auto",
+                      display: "block"
+                    }}
+                  />
+                ) : (
+                  <div className="text-center">
+                    <div className="text-6xl">🌳🏡🐔</div>
+                    <p className="mt-2 text-sm text-slate-600">No map yet. Add one in Settings.</p>
+                  </div>
+                )}
+                {/* Markers */}
+                {data.map.markers.map((m) => (
+                  <button
+                    key={m.id}
+                    className="absolute -translate-x-1/2 -translate-y-full rounded-lg border bg-white/95 px-2 py-1 text-xs shadow-lg hover:scale-105 transition-all duration-200"
+                    style={{ left: `${m.x}%`, top: `${m.y}%` }}
+                  >
+                    <span className="mr-1">{m.emoji || "📍"}</span>
+                    {m.name}
+                  </button>
+                ))}
+                {/* Donkey */}
+                {donkeyTrail && (
+                  <div
+                    className="absolute -translate-x-1/2 -translate-y-full transition-all duration-1000 ease-in-out"
+                    style={{ left: `${donkeyPosition.x}%`, top: `${donkeyPosition.y}%` }}
+                  >
+                    <img
+                      src="/donkey.png"
+                      alt="Donkey"
+                      className="h-8 w-8 animate-bounce"
+                      draggable={false}
+                    />
+                  </div>
+                )}
               </div>
             </div>
           </div>
         </div>
-      </div>
 
-      {/* Leaderboard Section */}
-      <div className="rounded-2xl border bg-white p-4 shadow-sm">
-        <h2 className="mb-4 text-lg font-semibold">Team Rankings</h2>
-        <div className="space-y-3">
-          {Object.entries(totals.teamTotals)
-            .sort(([,a], [,b]) => b - a)
-            .map(([teamId, points], index) => {
-              const team = data.teams.find(t => t.id === teamId);
-              return (
-                <div key={teamId} className="flex items-center justify-between rounded-lg border p-3">
+        {/* Team Rankings */}
+        <div className="rounded-2xl border bg-white p-4 shadow-sm">
+          <h2 className="mb-4 text-lg font-semibold">Team Rankings</h2>
+          <div className="space-y-3">
+            {data.teams
+              .map((team) => {
+                const teamId = team.id;
+                const totalScore = totals.teamTotals[teamId] || 0;
+                const totalPower = Object.values(totals.teamPowers[teamId] || {}).reduce((sum, power) => sum + power, 0);
+                return { team, totalScore, totalPower };
+              })
+              .sort((a, b) => b.totalScore - a.totalScore)
+              .map(({ team, totalScore, totalPower }, index) => (
+                <div key={team.id} className="flex items-center justify-between rounded-lg border p-3">
                   <div className="flex items-center gap-3">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-100 text-sm font-bold">
-                      {index + 1}
-                    </div>
+                    <div className="text-2xl" style={{ color: team.color }}>●</div>
                     <div>
-                      <div className="font-medium">{team?.name || teamId}</div>
-                      <div className="text-sm text-slate-500">
-                        {data.events.map(e => {
-                          const score = Math.min(data.scores.byTeamEvent?.[teamId]?.[e.id] ?? 0, 50);
-                          const power = totals.teamPowers[teamId]?.[e.id] ?? 0;
+                      <div className="font-medium">{team.name}</div>
+                      <div className="text-sm text-slate-600">
+                        {data.events.map((e) => {
+                          const score = Math.min(data.scores.byTeamEvent?.[team.id]?.[e.id] ?? 0, 50);
+                          const power = totals.teamPowers[team.id]?.[e.id] ?? 0;
                           return `${e.emoji} ${score}/50 (power: ${power})`;
                         }).join(" • ")}
                       </div>
                     </div>
                   </div>
-                  <div className="text-lg font-bold" style={{ color: team?.color }}>
-                    {points}
+                  <div className="text-right">
+                    <div className="text-lg font-bold">{totalScore}</div>
+                    <div className="text-xs text-slate-500">points</div>
                   </div>
                 </div>
-              );
-            })}
-        </div>
-        
-
-        
-
-        
-        {isAdmin && (
-          <div className="mt-4 rounded-lg border bg-emerald-50 p-3">
-            <h3 className="mb-2 font-medium text-emerald-800">Admin Controls</h3>
-            <div className="grid grid-cols-2 gap-2 text-sm">
-              <button 
-                onClick={() => window.location.hash = "#leaderboard"}
-                className="rounded bg-emerald-600 px-3 py-1 text-white"
-              >
-                Edit Scores
-              </button>
-              <button 
-                onClick={() => window.location.hash = "#people"}
-                className="rounded bg-emerald-600 px-3 py-1 text-white"
-              >
-                Manage People
-              </button>
-            </div>
+              ))}
           </div>
-        )}
+          {isAdmin && (
+            <div className="mt-4 rounded-lg border bg-emerald-50 p-3">
+              <h3 className="mb-2 font-medium text-emerald-800">Admin Controls</h3>
+              <div className="grid grid-cols-2 gap-2 text-sm">
+                <button 
+                  onClick={() => window.location.hash = "#leaderboard"}
+                  className="rounded bg-emerald-600 px-3 py-1 text-white"
+                >
+                  Edit Scores
+                </button>
+                <button 
+                  onClick={() => window.location.hash = "#people"}
+                  className="rounded bg-emerald-600 px-3 py-1 text-white"
+                >
+                  Manage People
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -1910,7 +1961,7 @@ function structuredClone<T>(obj: T): T {
 }
 
 /* -------------------------- SELF-TESTS (light) -------------------------- */
-/* These run once in dev; they’re our “tests” in a single-file app context. */
+/* These run once in dev; they're our "tests" in a single-file app context. */
 function runSelfTests() {
   // Test 1: ensureScoreMap fills zeros for every team/event
   const base = ensureScoreMap({
