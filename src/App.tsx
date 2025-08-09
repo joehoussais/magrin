@@ -58,6 +58,9 @@ type DataModel = {
 
 const STORAGE_KEY = "magrin_app_state_v1";
 
+// Admin configuration - 2 admins supportés
+const ADMIN_PASSWORDS = ["magrino2025", "admin2025"];
+
 // ---------- Defaults (edit in Settings later)
 const DEFAULT_DATA: DataModel = {
   map: {
@@ -320,7 +323,7 @@ function AdminLoginModal({ isAdmin, setIsAdmin, onClose }: {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (password === "magrino2025") {
+    if (ADMIN_PASSWORDS.includes(password)) {
       setIsAdmin(!isAdmin);
       setPassword("");
       setError("");

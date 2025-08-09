@@ -42,7 +42,9 @@ npm run preview
 
 ## 🔐 Accès Admin
 
-**Mot de passe :** `magrino2025`
+**Mots de passe admin :**
+- `magrino2025` (Admin principal)
+- `admin2025` (Admin secondaire)
 
 ### Fonctionnalités Admin :
 - Ajout/modification de joueurs
