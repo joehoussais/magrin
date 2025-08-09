@@ -1161,6 +1161,7 @@ function TeamEditor({ data, onChange }: { data: DataModel; onChange: (d: DataMod
 function People({ data, onChange, isAdmin }: { data: DataModel; onChange: (d: DataModel) => void; isAdmin: boolean }) {
   const [name, setName] = useState("");
   const [emoji, setEmoji] = useState("😀");
+  const [bio, setBio] = useState("");
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [teamId, setTeamId] = useState<string | undefined>(data.teams[0]?.id);
   const [ratings, setRatings] = useState<Record<string, number>>({});
@@ -1213,6 +1214,7 @@ function People({ data, onChange, isAdmin }: { data: DataModel; onChange: (d: Da
       id, 
       name: name.trim(), 
       emoji, 
+      bio: bio.trim(),
       teamId,
       ratings: initialRatings
     };
@@ -1225,6 +1227,7 @@ function People({ data, onChange, isAdmin }: { data: DataModel; onChange: (d: Da
     setEditingPlayer(player);
     setName(player.name);
     setEmoji(player.emoji || "😀");
+    setBio(player.bio || "");
     setTeamId(player.teamId);
     setRatings({ ...player.ratings });
   }
@@ -1236,6 +1239,7 @@ function People({ data, onChange, isAdmin }: { data: DataModel; onChange: (d: Da
       ...editingPlayer,
       name: name.trim(),
       emoji,
+      bio: bio.trim(),
       teamId,
       ratings: { ...ratings }
     };
@@ -1248,6 +1252,7 @@ function People({ data, onChange, isAdmin }: { data: DataModel; onChange: (d: Da
     setEditingPlayer(null);
     setName("");
     setEmoji("😀");
+    setBio("");
     setTeamId(data.teams[0]?.id);
     setRatings({});
   }
@@ -1256,6 +1261,7 @@ function People({ data, onChange, isAdmin }: { data: DataModel; onChange: (d: Da
     setEditingPlayer(null);
     setName("");
     setEmoji("😀");
+    setBio("");
     setTeamId(data.teams[0]?.id);
     setRatings({});
   }
@@ -1309,6 +1315,7 @@ function People({ data, onChange, isAdmin }: { data: DataModel; onChange: (d: Da
         )}
         <div className={`space-y-2 ${!isAdmin ? 'opacity-50 pointer-events-none' : ''}`}>
           <TextField label="Name" value={name} onChange={setName} />
+          <TextField label="Bio/Tagline" value={bio} onChange={setBio} placeholder="e.g., Chief vibe officer" />
           
           <div>
             <label className="block text-xs font-medium text-slate-600 mb-1">Emoji</label>
