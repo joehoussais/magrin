@@ -555,7 +555,7 @@ function WelcomeView({ data, onChange, totals, isAdmin }: {
                 {
                   type: "web_search",
                   web_search: {
-                    query: `${playerOfTheMorning.name} ${teamName} ${playerBio}`
+                    query: `${playerOfTheMorning.name}`
                   }
                 }
               ]
