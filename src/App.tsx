@@ -245,10 +245,10 @@ function TopBar({
 }) {
   const tabs: { key: TabKey; label: string; emoji: string }[] = [
     { key: "welcome", label: "Welcome", emoji: "🏠" },
-    { key: "map", label: "Map", emoji: "🗺️" },
     { key: "leaderboard", label: "T-E-R", emoji: "🏆" },
+    { key: "map", label: "Map", emoji: "🗺️" },
     { key: "people", label: "People", emoji: "🧑‍🌾" },
-    { key: "info", label: "Info", emoji: "ℹ️" },
+    { key: "info", label: "Stories", emoji: "📖" },
     { key: "chat", label: "Chat", emoji: "💬" },
     { key: "settings", label: "Settings", emoji: "⚙️" },
   ];
@@ -1427,55 +1427,153 @@ function People({ data, onChange, isAdmin }: { data: DataModel; onChange: (d: Da
 
 function Info({ data, onChange }: { data: DataModel; onChange: (d: DataModel) => void }) {
   return (
-    <div className="grid gap-6 md:grid-cols-3">
-      <InfoColumn title="Animals" items={data.info.animals} onAdd={(x) => onChange({ ...data, info: { ...data.info, animals: [...data.info.animals, x] } })} onDelete={(i) => onChange({ ...data, info: { ...data.info, animals: data.info.animals.filter((_, idx) => idx !== i) } })} />
-      <InfoColumn title="Places" items={data.info.places} onAdd={(x) => onChange({ ...data, info: { ...data.info, places: [...data.info.places, x] } })} onDelete={(i) => onChange({ ...data, info: { ...data.info, places: data.info.places.filter((_, idx) => idx !== i) } })} />
-      <InfoColumn title="Notices" items={data.info.notices} onAdd={(x) => onChange({ ...data, info: { ...data.info, notices: [...data.info.notices, x] } })} onDelete={(i) => onChange({ ...data, info: { ...data.info, notices: data.info.notices.filter((_, idx) => idx !== i) } })} />
+    <div className="space-y-6">
+      <div className="text-center">
+        <h1 className="text-3xl font-bold text-slate-800 mb-2">📖 Magrin Stories & Legends</h1>
+        <p className="text-slate-600">Share the latest gossip, legends, and stories about Magrin! Everyone can contribute.</p>
+      </div>
+      
+      <div className="grid gap-6 md:grid-cols-3">
+        <InfoColumn 
+          title="🐾 Animal Tales" 
+          subtitle="Wild encounters and pet stories"
+          items={data.info.animals} 
+          onAdd={(x) => onChange({ ...data, info: { ...data.info, animals: [...data.info.animals, x] } })} 
+          onDelete={(i) => onChange({ ...data, info: { ...data.info, animals: data.info.animals.filter((_, idx) => idx !== i) } })} 
+        />
+        <InfoColumn 
+          title="🏰 Magical Places" 
+          subtitle="Hidden spots and legendary locations"
+          items={data.info.places} 
+          onAdd={(x) => onChange({ ...data, info: { ...data.info, places: [...data.info.places, x] } })} 
+          onDelete={(i) => onChange({ ...data, info: { ...data.info, places: data.info.places.filter((_, idx) => idx !== i) } })} 
+        />
+        <InfoColumn 
+          title="💭 Gossip & News" 
+          subtitle="Latest rumors and announcements"
+          items={data.info.notices} 
+          onAdd={(x) => onChange({ ...data, info: { ...data.info, notices: [...data.info.notices, x] } })} 
+          onDelete={(i) => onChange({ ...data, info: { ...data.info, notices: data.info.notices.filter((_, idx) => idx !== i) } })} 
+        />
+      </div>
     </div>
   );
 }
 
-function InfoColumn({ title, items, onAdd, onDelete }: { title: string; items: { title: string; body: string; emoji?: string; date?: string }[]; onAdd: (x: any) => void; onDelete: (i: number) => void }) {
+function InfoColumn({ title, subtitle, items, onAdd, onDelete }: { 
+  title: string; 
+  subtitle?: string;
+  items: { title: string; body: string; emoji?: string; date?: string }[]; 
+  onAdd: (x: any) => void; 
+  onDelete: (i: number) => void 
+}) {
   const [t, setT] = useState("");
   const [b, setB] = useState("");
   const [e, setE] = useState("");
+  const [showForm, setShowForm] = useState(false);
+  
   return (
     <div className="rounded-2xl border bg-white p-4 shadow-sm">
-      <h2 className="mb-4 text-lg font-semibold">{title}</h2>
-      <div className="space-y-3">
+      <div className="mb-4">
+        <h2 className="text-lg font-semibold">{title}</h2>
+        {subtitle && <p className="text-sm text-slate-500">{subtitle}</p>}
+      </div>
+      
+      <div className="space-y-3 mb-4">
         {items.map((it, i) => (
-          <div key={i} className="rounded-xl border p-3 shadow-sm">
-            <div className="mb-1 flex items-center justify-between">
-              <div className="font-medium">
-                {it.emoji && <span className="mr-1">{it.emoji}</span>}
+          <div key={i} className="rounded-xl border p-3 shadow-sm hover:shadow-md transition-shadow">
+            <div className="mb-2 flex items-center justify-between">
+              <div className="font-medium text-slate-800">
+                {it.emoji && <span className="mr-2">{it.emoji}</span>}
                 {it.title}
               </div>
-              <button className="rounded border px-2 py-1 text-xs" onClick={() => onDelete(i)}>
-                Remove
+              <button 
+                className="rounded-full w-6 h-6 flex items-center justify-center text-xs text-red-500 hover:bg-red-50 hover:text-red-700 transition-colors" 
+                onClick={() => onDelete(i)}
+                title="Delete story"
+              >
+                ×
               </button>
             </div>
-            {it.date && <div className="text-xs text-slate-500">{it.date}</div>}
-            <p className="text-sm text-slate-700">{it.body}</p>
+            {it.date && <div className="text-xs text-slate-400 mb-2">{it.date}</div>}
+            <p className="text-sm text-slate-700 leading-relaxed">{it.body}</p>
           </div>
         ))}
-        <div className="rounded-xl border p-3">
-          <TextField label="Title" value={t} onChange={setT} />
-          <TextField label="Emoji" value={e} onChange={setE} />
-          <TextArea label="Body" value={b} onChange={setB} />
-          <button
-            className="mt-2 w-full rounded bg-emerald-600 px-3 py-2 text-white"
-            onClick={() => {
-              if (!t.trim()) return;
-              onAdd({ title: t.trim(), body: b.trim(), emoji: e || undefined, date: new Date().toISOString().slice(0, 10) });
-              setT("");
-              setB("");
-              setE("");
-            }}
-          >
-            Add {title.slice(0, -1)}
-          </button>
-        </div>
       </div>
+      
+      {!showForm ? (
+        <button
+          onClick={() => setShowForm(true)}
+          className="w-full rounded-lg border-2 border-dashed border-slate-300 px-4 py-3 text-sm text-slate-600 hover:border-slate-400 hover:text-slate-700 transition-colors"
+        >
+          ✨ Add New Story
+        </button>
+      ) : (
+        <div className="space-y-3 rounded-lg border bg-slate-50 p-3">
+          <input
+            type="text"
+            placeholder="Story title..."
+            value={t}
+            onChange={(e) => setT(e.target.value)}
+            className="w-full rounded border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+          />
+          <div className="flex gap-2">
+            <input
+              type="text"
+              placeholder="Emoji (optional)"
+              value={e}
+              onChange={(e) => setE(e.target.value)}
+              className="flex-1 rounded border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            />
+            <button
+              onClick={() => setE("")}
+              className="px-3 py-2 text-sm text-slate-500 hover:text-slate-700"
+            >
+              Clear
+            </button>
+          </div>
+          <textarea
+            placeholder="Tell your story... (gossip, legend, or news)"
+            value={b}
+            onChange={(e) => setB(e.target.value)}
+            className="w-full rounded border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            rows={4}
+          />
+          <div className="flex gap-2">
+            <button
+              onClick={() => {
+                if (t.trim() && b.trim()) {
+                  onAdd({ 
+                    title: t.trim(), 
+                    body: b.trim(), 
+                    emoji: e.trim() || undefined, 
+                    date: new Date().toLocaleDateString() 
+                  });
+                  setT("");
+                  setB("");
+                  setE("");
+                  setShowForm(false);
+                }
+              }}
+              disabled={!t.trim() || !b.trim()}
+              className="flex-1 rounded bg-emerald-600 px-3 py-2 text-sm text-white hover:bg-emerald-700 disabled:bg-slate-300 disabled:text-slate-500 transition-colors"
+            >
+              📖 Share Story
+            </button>
+            <button
+              onClick={() => {
+                setShowForm(false);
+                setT("");
+                setB("");
+                setE("");
+              }}
+              className="px-3 py-2 text-sm text-slate-500 hover:text-slate-700"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
