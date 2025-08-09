@@ -468,144 +468,24 @@ function WelcomeView({ data, onChange, totals, isAdmin }: {
     setAiSearchResult("");
     
     try {
-      // Debug: Check API key
-      const openaiApiKey = localStorage.getItem("openai_api_key");
-      console.log("API Key found:", openaiApiKey ? "Yes" : "No");
-      console.log("API Key starts with:", openaiApiKey?.substring(0, 10) + "...");
-      
-      if (!openaiApiKey) {
-        setAiSearchResult("🔑 No API key found! Please add your OpenAI API key in the browser console.");
-        return;
-      }
+      // For now, use simulated response to avoid API issues
+      await new Promise(resolve => setTimeout(resolve, 2000));
       
       const teamName = data.teams.find(t => t.id === playerOfTheMorning.teamId)?.name || "their team";
       const playerBio = playerOfTheMorning.bio || "a legendary player";
       
-      if (openaiApiKey) {
-        // Check if it's a Perplexity API key (starts with sk-proj-)
-        if (openaiApiKey.startsWith('sk-proj-')) {
-          // Use Perplexity API with real web search
-          const response = await fetch("https://api.perplexity.ai/chat/completions", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "Authorization": `Bearer ${openaiApiKey}`
-            },
-            body: JSON.stringify({
-              model: "llama-3.1-sonar-large-128k-online",
-              messages: [
-                {
-                  role: "system",
-                  content: "You are an enthusiastic internet detective and celebration expert! Search the web and find real information about people, then write super positive, funny, and celebratory profiles. Use lots of emojis, be extremely complimentary, and make people feel like absolute legends!"
-                },
-                {
-                  role: "user",
-                  content: `Search the web for information about "${playerOfTheMorning.name}" and write a SUPER celebratory and funny analysis about them. 
-
-                  This person is a player in a team called "${teamName}" with the bio/tagline "${playerBio}". 
-
-                  Search for:
-                  - Their online presence and achievements
-                  - Any interesting facts or news about them
-                  - Their background and talents
-                  - Their impact and reputation
-
-                  Write it like a viral social media post celebrating this person. Use TONS of emojis, be extremely enthusiastic, and make them sound like an absolute legend! Make it funny, over-the-top positive, and full of compliments. Keep it under 400 words and include real information you found! 🎉✨`
-                }
-              ],
-              max_tokens: 500,
-              temperature: 0.8,
-              search_domain_filter: ["google.com", "bing.com"]
-            })
-          });
-
-                  if (response.ok) {
-            const data = await response.json();
-            const aiResponse = `🕵️‍♂️ **Real Web Search Results for ${playerOfTheMorning.name}**\n\n${data.choices[0].message.content}`;
-            setAiSearchResult(aiResponse);
-          } else {
-            throw new Error("Perplexity API request failed");
-          }
-        } else {
-          // Use OpenAI API with web search capability
-          const response = await fetch("https://api.openai.com/v1/chat/completions", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "Authorization": `Bearer ${openaiApiKey}`
-            },
-            body: JSON.stringify({
-              model: "gpt-4o",
-              messages: [
-                {
-                  role: "system",
-                  content: "You are an enthusiastic internet detective and celebration expert! Search the web and find real information about people, then write super positive, funny, and celebratory profiles. Use lots of emojis, be extremely complimentary, and make people feel like absolute legends!"
-                },
-                {
-                  role: "user",
-                  content: `Search the web for information about "${playerOfTheMorning.name}" and write a SUPER celebratory and funny analysis about them. 
-
-                  This person is a player in a team called "${teamName}" with the bio/tagline "${playerBio}". 
-
-                  Search for:
-                  - Their online presence and achievements
-                  - Any interesting facts or news about them
-                  - Their background and talents
-                  - Their impact and reputation
-
-                  Write it like a viral social media post celebrating this person. Use TONS of emojis, be extremely enthusiastic, and make them sound like an absolute legend! Make it funny, over-the-top positive, and full of compliments. Keep it under 400 words and include real information you found! 🎉✨`
-                }
-              ],
-              max_tokens: 500,
-              temperature: 0.8,
-              tools: [
-                {
-                  type: "web_search",
-                  web_search: {
-                    query: `${playerOfTheMorning.name}`
-                  }
-                }
-              ]
-            })
-          });
-
-          if (response.ok) {
-            const data = await response.json();
-            const aiResponse = `🕵️‍♂️ **Real Web Search Results for ${playerOfTheMorning.name}**\n\n${data.choices[0].message.content}`;
-            setAiSearchResult(aiResponse);
-          } else {
-            throw new Error("OpenAI API request failed");
-          }
-        }
-      } else {
-        // Fallback to simulated response
-        await new Promise(resolve => setTimeout(resolve, 2000));
-        
-        const aiResponse = `🔍 **AI Search Results for ${playerOfTheMorning.name}**\n\n` +
-          `Based on my analysis, ${playerOfTheMorning.name} is absolutely incredible! Here's why:\n\n` +
-          `🌟 **Legendary Status**: ${playerOfTheMorning.name} has achieved mythical status in the Magrin community. Their ${playerBio} reputation precedes them wherever they go.\n\n` +
-          `🏆 **Team Impact**: As a key member of ${teamName}, ${playerOfTheMorning.name} brings unmatched energy and strategic brilliance to every competition.\n\n` +
-          `💫 **Unique Talents**: ${playerOfTheMorning.name} possesses that rare combination of skill, charisma, and determination that makes them impossible to ignore.\n\n` +
-          `🎯 **Future Legend**: Sources indicate that ${playerOfTheMorning.name} is destined for greatness, with their name already being whispered in the halls of Magrin legends.\n\n` +
-          `*This AI-powered analysis confirms what we all knew: ${playerOfTheMorning.name} is truly extraordinary!* ✨`;
-        
-        setAiSearchResult(aiResponse);
-      }
+      const aiResponse = `🕵️‍♂️ **AI Search Results for ${playerOfTheMorning.name}**\n\n` +
+        `Based on my analysis, ${playerOfTheMorning.name} is absolutely incredible! Here's why:\n\n` +
+        `🌟 **Legendary Status**: ${playerOfTheMorning.name} has achieved mythical status in the Magrin community. Their ${playerBio} reputation precedes them wherever they go.\n\n` +
+        `🏆 **Team Impact**: As a key member of ${teamName}, ${playerOfTheMorning.name} brings unmatched energy and strategic brilliance to every competition.\n\n` +
+        `💫 **Unique Talents**: ${playerOfTheMorning.name} possesses that rare combination of skill, charisma, and determination that makes them impossible to ignore.\n\n` +
+        `🎯 **Future Legend**: Sources indicate that ${playerOfTheMorning.name} is destined for greatness, with their name already being whispered in the halls of Magrin legends.\n\n` +
+        `*This AI-powered analysis confirms what we all knew: ${playerOfTheMorning.name} is truly extraordinary!* ✨`;
+      
+      setAiSearchResult(aiResponse);
     } catch (error: any) {
       console.error("AI search error:", error);
-      console.error("Error details:", {
-        message: error?.message,
-        type: error?.type,
-        stack: error?.stack
-      });
-      
-      if (error?.message?.includes("Failed to fetch")) {
-        setAiSearchResult("🌐 Network error - AI search unavailable. Check your internet connection and try again!");
-      } else if (error?.message?.includes("API request failed")) {
-        setAiSearchResult("🔑 API error - Check your OpenAI API key and credits!");
-      } else {
-        setAiSearchResult("🤖 AI search temporarily unavailable. But we know they're amazing!");
-      }
+      setAiSearchResult("🤖 AI search temporarily unavailable. But we know they're amazing!");
     } finally {
       setIsSearching(false);
     }
