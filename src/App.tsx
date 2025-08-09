@@ -492,39 +492,33 @@ function WelcomeView({ data, onChange, totals, isAdmin }: {
             messages: [
               {
                 role: "system",
-                content: "You are an enthusiastic internet detective and celebration expert! Search the web and find real information about people, then write super positive, funny, and celebratory profiles. Use lots of emojis, be extremely complimentary, and make people feel like absolute legends!"
+                content: "You are an enthusiastic celebration expert! Write super positive, funny, and celebratory profiles about people. Use lots of emojis, be extremely complimentary, and make people feel like absolute legends! Be creative and imaginative while staying positive and fun."
               },
               {
                 role: "user",
-                content: `Search the web for information about "${playerOfTheMorning.name}" and write a SUPER celebratory and funny analysis about them. 
+                content: `Write a SUPER celebratory and funny analysis about "${playerOfTheMorning.name}"! 
 
                 This person is a player in a team called "${teamName}" with the bio/tagline "${playerBio}". 
 
-                Search for:
-                - Their online presence and achievements
-                - Any interesting facts or news about them
-                - Their background and talents
-                - Their impact and reputation
+                Create an amazing profile that includes:
+                - Their legendary status and achievements
+                - Their incredible talents and skills
+                - Their impact on the team and community
+                - Their unique personality and charm
+                - Their future potential and greatness
 
-                Write it like a viral social media post celebrating this person. Use TONS of emojis, be extremely enthusiastic, and make them sound like an absolute legend! Make it funny, over-the-top positive, and full of compliments. Keep it under 400 words and include real information you found! 🎉✨`
+                Write it like a viral social media post celebrating this person. Use TONS of emojis, be extremely enthusiastic, and make them sound like an absolute legend! Make it funny, over-the-top positive, and full of compliments. Keep it under 400 words and be super creative! 🎉✨`
               }
             ],
             max_tokens: 500,
             temperature: 0.8,
-            tools: [
-              {
-                type: "web_search",
-                web_search: {
-                  query: `${playerOfTheMorning.name}`
-                }
-              }
-            ]
+            // Remove tools for now - use GPT-4o's built-in knowledge
           })
         });
 
         if (response.ok) {
           const data = await response.json();
-          const aiResponse = `🕵️‍♂️ **Real Web Search Results for ${playerOfTheMorning.name}**\n\n${data.choices[0].message.content}`;
+          const aiResponse = `🤖 **AI Celebration Profile for ${playerOfTheMorning.name}**\n\n${data.choices[0].message.content}`;
           setAiSearchResult(aiResponse);
           return; // Success! Exit early
         } else {
