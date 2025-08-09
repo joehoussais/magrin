@@ -182,8 +182,10 @@ export default function App() {
 
   // Run simple self-tests once (dev only)
   useEffect(() => {
-    if (typeof process !== "undefined" && (process as any)?.env?.NODE_ENV === "production") return;
-    runSelfTests();
+    // Only run in development
+    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+      runSelfTests();
+    }
   }, []);
 
   return (
