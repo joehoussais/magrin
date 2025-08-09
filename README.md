@@ -1,27 +1,96 @@
-# Magrin Week (Vite + React + Tailwind)
+# 🏠 Magrin App v1.0.0
 
-This is a ready-to-run project for Cursor. It includes:
-- React + TypeScript
-- TailwindCSS (preconfigured)
-- Your cute cartoony map in `public/magrin-map.png`
-- The app UI with Map, T-E-R leaderboard, People, Info, Chat
+Une application web interactive pour gérer les équipes, les joueurs et les événements sportifs au domaine de Magrin.
 
-## Run locally (Cursor / VS Code)
+## ✨ Fonctionnalités
 
-1. **Open Folder** in Cursor: select this project folder.
-2. Open a terminal and run:
-   ```bash
-   npm install
-   npm run dev
-   ```
-3. Open the URL printed in the terminal (usually http://localhost:5173).
+### 🎮 **Gestion des Équipes & Joueurs**
+- **35 joueurs pré-configurés** avec évaluations par sport
+- **Système de notation** (1-5) pour Tennis, Running, Chess
+- **Calcul automatique** de la puissance d'équipe
+- **Interface admin** sécurisée (mot de passe: `magrino2025`)
 
-## Deploy (optional)
+### 🗺️ **Carte Interactive**
+- **Zoom et déplacement** fluides
+- **Marqueurs personnalisables** pour les lieux importants
+- **Trail d'âne animé** 🐴 entre les points d'intérêt
+- **Image haute résolution** du domaine
 
-- **Vercel**: `npm run build` then import the repo in Vercel (or `vercel` if you have the CLI).
-- **Netlify**: build command `npm run build`, publish `dist/`.
+### 📊 **Classements & Scores**
+- **Classement en temps réel** des équipes
+- **Puissance d'équipe** basée sur les évaluations des joueurs
+- **Interface de gestion** des scores (admin uniquement)
 
-## Notes
+### 💬 **Communication**
+- **Chat/Forum** pour les participants
+- **Messages publics** accessibles à tous
+- **Notifications** et informations importantes
 
-- To change the map: put a new file in `/public` and set it in **Settings** inside the app.
-- All data persists to `localStorage`. Use Settings → Copy/Import JSON to share state.
+## 🚀 Déploiement
+
+### Développement Local
+```bash
+npm install
+npm run dev
+```
+
+### Production
+```bash
+npm run build
+npm run preview
+```
+
+## 🔐 Accès Admin
+
+**Mot de passe :** `magrino2025`
+
+### Fonctionnalités Admin :
+- Ajout/modification de joueurs
+- Gestion des équipes
+- Modification des scores
+- Configuration de la carte
+- Import/export des données
+
+## 🎯 Utilisation
+
+1. **Page d'accueil** : Vue d'ensemble avec carte et classements
+2. **Carte** : Navigation interactive et gestion des marqueurs
+3. **Classements** : Suivi des performances d'équipe
+4. **Joueurs** : Gestion des participants (admin)
+5. **Chat** : Communication entre participants
+6. **Paramètres** : Configuration et sauvegarde
+
+## 🛠️ Technologies
+
+- **React 18** + TypeScript
+- **Vite** pour le build
+- **Tailwind CSS** pour le styling
+- **LocalStorage** pour la persistance
+- **Emojis** pour une interface ludique
+
+## 📱 Compatibilité
+
+- ✅ Desktop (Chrome, Firefox, Safari, Edge)
+- ✅ Mobile (responsive design)
+- ✅ Tablette (interface adaptée)
+
+## 🔄 Versions
+
+### v1.0.0 (Actuelle)
+- ✅ 35 joueurs pré-configurés
+- ✅ Mode admin sécurisé
+- ✅ Carte interactive avec zoom/pan
+- ✅ Trail d'âne animé
+- ✅ Système de classement
+- ✅ Chat/forum
+- ✅ Sauvegarde locale
+
+## 👥 Équipe
+
+**Développeur :** Joseph Houssais
+**Domaine :** Magrin
+**Version :** 1.0.0
+
+---
+
+*Une application moderne et ludique pour organiser vos événements sportifs au domaine de Magrin ! 🏆*
