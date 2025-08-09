@@ -1102,6 +1102,7 @@ function People({ data, onChange, isAdmin }: { data: DataModel; onChange: (d: Da
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [teamId, setTeamId] = useState<string | undefined>(data.teams[0]?.id);
   const [ratings, setRatings] = useState<Record<string, number>>({});
+  const [editingPlayer, setEditingPlayer] = useState<Person | null>(null);
 
   const emojiOptions = [
     "😀", "😃", "😄", "😁", "😆", "😅", "😂", "🤣", "😊", "😇",
@@ -1158,6 +1159,45 @@ function People({ data, onChange, isAdmin }: { data: DataModel; onChange: (d: Da
     setRatings({});
   }
 
+  function startEdit(player: Person) {
+    setEditingPlayer(player);
+    setName(player.name);
+    setEmoji(player.emoji || "😀");
+    setTeamId(player.teamId);
+    setRatings({ ...player.ratings });
+  }
+
+  function saveEdit() {
+    if (!editingPlayer || !name.trim()) return;
+    
+    const updatedPlayer: Person = {
+      ...editingPlayer,
+      name: name.trim(),
+      emoji,
+      teamId,
+      ratings: { ...ratings }
+    };
+    
+    const updatedPeople = data.people.map(p => 
+      p.id === editingPlayer.id ? updatedPlayer : p
+    );
+    
+    onChange({ ...data, people: updatedPeople });
+    setEditingPlayer(null);
+    setName("");
+    setEmoji("😀");
+    setTeamId(data.teams[0]?.id);
+    setRatings({});
+  }
+
+  function cancelEdit() {
+    setEditingPlayer(null);
+    setName("");
+    setEmoji("😀");
+    setTeamId(data.teams[0]?.id);
+    setRatings({});
+  }
+
   return (
     <div className="grid gap-6 md:grid-cols-3">
       <div className="md:col-span-2 rounded-2xl border bg-white p-4 shadow-sm">
@@ -1174,9 +1214,14 @@ function People({ data, onChange, isAdmin }: { data: DataModel; onChange: (d: Da
                   </div>
                 </div>
                 {isAdmin && (
-                  <button className="rounded border px-2 py-1 text-xs" onClick={() => onChange({ ...data, people: data.people.filter((pp) => pp.id !== p.id) })}>
-                    Remove
-                  </button>
+                  <div className="flex gap-1">
+                    <button className="rounded border px-2 py-1 text-xs hover:bg-blue-50" onClick={() => startEdit(p)}>
+                      Edit
+                    </button>
+                    <button className="rounded border px-2 py-1 text-xs hover:bg-red-50" onClick={() => onChange({ ...data, people: data.people.filter((pp) => pp.id !== p.id) })}>
+                      Remove
+                    </button>
+                  </div>
                 )}
               </div>
               {p.bio && <p className="mt-2 text-sm text-slate-600">{p.bio}</p>}
@@ -1192,7 +1237,9 @@ function People({ data, onChange, isAdmin }: { data: DataModel; onChange: (d: Da
         </div>
       </div>
       <div className="rounded-2xl border bg-white p-4 shadow-sm">
-        <h3 className="mb-3 text-base font-semibold">Add person</h3>
+        <h3 className="mb-3 text-base font-semibold">
+          {editingPlayer ? `Edit ${editingPlayer.name}` : "Add person"}
+        </h3>
         {!isAdmin && (
           <div className="mb-3 rounded-lg border bg-amber-50 p-3 text-sm text-amber-800">
             🔒 Admin access required to add or edit people
@@ -1266,17 +1313,39 @@ function People({ data, onChange, isAdmin }: { data: DataModel; onChange: (d: Da
             ))}
           </div>
           
-          <button 
-            className={`mt-2 w-full px-3 py-2 rounded ${
-              isAdmin 
-                ? "bg-emerald-600 text-white hover:bg-emerald-700" 
-                : "bg-slate-300 text-slate-500 cursor-not-allowed"
-            }`} 
-            onClick={add}
-            disabled={!isAdmin}
-          >
-            {isAdmin ? "Add Player" : "Admin Required"}
-          </button>
+          {editingPlayer ? (
+            <div className="flex gap-2 mt-2">
+              <button 
+                className={`flex-1 px-3 py-2 rounded ${
+                  isAdmin 
+                    ? "bg-emerald-600 text-white hover:bg-emerald-700" 
+                    : "bg-slate-300 text-slate-500 cursor-not-allowed"
+                }`} 
+                onClick={saveEdit}
+                disabled={!isAdmin}
+              >
+                {isAdmin ? "Save Changes" : "Admin Required"}
+              </button>
+              <button 
+                className="px-3 py-2 rounded border hover:bg-slate-50"
+                onClick={cancelEdit}
+              >
+                Cancel
+              </button>
+            </div>
+          ) : (
+            <button 
+              className={`mt-2 w-full px-3 py-2 rounded ${
+                isAdmin 
+                  ? "bg-emerald-600 text-white hover:bg-emerald-700" 
+                  : "bg-slate-300 text-slate-500 cursor-not-allowed"
+              }`} 
+              onClick={add}
+              disabled={!isAdmin}
+            >
+              {isAdmin ? "Add Player" : "Admin Required"}
+            </button>
+          )}
         </div>
       </div>
     </div>
