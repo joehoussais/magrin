@@ -468,11 +468,18 @@ function WelcomeView({ data, onChange, totals, isAdmin }: {
     setAiSearchResult("");
     
     try {
+      // Debug: Check API key
+      const openaiApiKey = localStorage.getItem("openai_api_key");
+      console.log("API Key found:", openaiApiKey ? "Yes" : "No");
+      console.log("API Key starts with:", openaiApiKey?.substring(0, 10) + "...");
+      
+      if (!openaiApiKey) {
+        setAiSearchResult("🔑 No API key found! Please add your OpenAI API key in the browser console.");
+        return;
+      }
+      
       const teamName = data.teams.find(t => t.id === playerOfTheMorning.teamId)?.name || "their team";
       const playerBio = playerOfTheMorning.bio || "a legendary player";
-      
-      // Check if OpenAI API key is available
-      const openaiApiKey = localStorage.getItem("openai_api_key");
       
       if (openaiApiKey) {
         // Check if it's a Perplexity API key (starts with sk-proj-)
@@ -584,9 +591,21 @@ function WelcomeView({ data, onChange, totals, isAdmin }: {
         
         setAiSearchResult(aiResponse);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("AI search error:", error);
-      setAiSearchResult("🤖 AI search temporarily unavailable. But we know they're amazing!");
+      console.error("Error details:", {
+        message: error?.message,
+        type: error?.type,
+        stack: error?.stack
+      });
+      
+      if (error?.message?.includes("Failed to fetch")) {
+        setAiSearchResult("🌐 Network error - AI search unavailable. Check your internet connection and try again!");
+      } else if (error?.message?.includes("API request failed")) {
+        setAiSearchResult("🔑 API error - Check your OpenAI API key and credits!");
+      } else {
+        setAiSearchResult("🤖 AI search temporarily unavailable. But we know they're amazing!");
+      }
     } finally {
       setIsSearching(false);
     }
@@ -652,48 +671,48 @@ function WelcomeView({ data, onChange, totals, isAdmin }: {
 
   return (
     <div className="space-y-6">
-      {/* Player of the Morning */}
+      {/* Player of the Moment - Slim Version */}
       {playerOfTheMorning && (
-        <div className="rounded-2xl border bg-gradient-to-r from-amber-50 to-orange-50 p-6 shadow-sm">
-          <div className="text-center">
-            <div className="mb-2 text-sm font-medium text-amber-700">🌟 Player of the Moment</div>
-            <div className="mb-4 flex items-center justify-center gap-3">
-              <span className="text-4xl">{playerOfTheMorning.emoji || "🙂"}</span>
+        <div className="rounded-xl border bg-gradient-to-r from-amber-50 to-orange-50 p-3 shadow-sm">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <span className="text-2xl">{playerOfTheMorning.emoji || "🙂"}</span>
               <div>
-                <div className="text-xl font-bold text-slate-800">{playerOfTheMorning.name}</div>
-                <div className="text-sm text-slate-600">
+                <div className="text-sm font-medium text-amber-700">🌟 Player of the Moment</div>
+                <div className="font-semibold text-slate-800">{playerOfTheMorning.name}</div>
+                <div className="text-xs text-slate-600">
                   {data.teams.find(t => t.id === playerOfTheMorning.teamId)?.name}
                   {playerOfTheMorning.bio && ` • ${playerOfTheMorning.bio}`}
                 </div>
               </div>
             </div>
-            <div className="text-lg italic text-slate-700">{playerQuote}</div>
             
-            {/* AI Search Button */}
-            <div className="mt-4">
+            <div className="flex items-center gap-2">
               <button
                 onClick={searchPlayerWithAI}
                 disabled={isSearching}
-                className={`rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
+                className={`rounded-lg px-3 py-1 text-xs font-medium transition-colors ${
                   isSearching 
                     ? "bg-slate-300 text-slate-500 cursor-not-allowed" 
                     : "bg-gradient-to-r from-purple-600 to-blue-600 text-white hover:from-purple-700 hover:to-blue-700"
                 }`}
               >
-                {isSearching ? "🔍 Searching Google..." : "🕵️‍♂️ Google Search Player"}
+                {isSearching ? "🔍..." : "🕵️‍♂️ Search"}
               </button>
             </div>
-
-            {/* AI Search Results */}
-            {aiSearchResult && (
-              <div className="mt-4 rounded-lg border bg-gradient-to-r from-purple-50 to-blue-50 p-4 text-left">
-                <div className="whitespace-pre-line text-sm text-slate-700">{aiSearchResult}</div>
-              </div>
-            )}
-            
-            <div className="mt-3 text-xs text-slate-500">
-              Changes every 4 hours • All honors for 4 hours!
+          </div>
+          
+          <div className="mt-2 text-sm italic text-slate-700">{playerQuote}</div>
+          
+          {/* AI Search Results - Compact */}
+          {aiSearchResult && (
+            <div className="mt-2 rounded-lg border bg-gradient-to-r from-purple-50 to-blue-50 p-2 text-left">
+              <div className="whitespace-pre-line text-xs text-slate-700 max-h-32 overflow-y-auto">{aiSearchResult}</div>
             </div>
+          )}
+          
+          <div className="mt-1 text-xs text-slate-500">
+            Changes every 4 hours • All honors for 4 hours!
           </div>
         </div>
       )}
