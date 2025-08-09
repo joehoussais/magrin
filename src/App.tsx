@@ -235,7 +235,7 @@ function TopBar({
 }: { 
   tab: TabKey; 
   setTab: (t: TabKey) => void; 
-  totals: { teamTotals: Record<string, number>; teamPowers: Record<string, Record<string, number>> };
+  totals: { teamTotals: Record<string, number>; teamPowers: Record<string, Record<string, number>>; eventTotals: Record<string, Record<string, number>> };
   isAdmin: boolean;
   setIsAdmin: (admin: boolean) => void;
   showAdminLogin: boolean;
@@ -391,7 +391,7 @@ function AdminLoginModal({ isAdmin, setIsAdmin, onClose }: {
 function WelcomeView({ data, onChange, totals, isAdmin }: { 
   data: DataModel; 
   onChange: (d: DataModel) => void; 
-  totals: { teamTotals: Record<string, number>; teamPowers: Record<string, Record<string, number>> };
+  totals: { teamTotals: Record<string, number>; teamPowers: Record<string, Record<string, number>>; eventTotals: Record<string, Record<string, number>> };
   isAdmin: boolean;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -596,9 +596,9 @@ function WelcomeView({ data, onChange, totals, isAdmin }: {
                       <div className="font-medium">{team?.name || teamId}</div>
                       <div className="text-sm text-slate-500">
                         {data.events.map(e => {
-                          const score = data.scores.byTeamEvent?.[teamId]?.[e.id] ?? 0;
+                          const score = Math.min(data.scores.byTeamEvent?.[teamId]?.[e.id] ?? 0, 50);
                           const power = totals.teamPowers[teamId]?.[e.id] ?? 0;
-                          return `${e.emoji} ${score} (power: ${power})`;
+                          return `${e.emoji} ${score}/50 (power: ${power})`;
                         }).join(" • ")}
                       </div>
                     </div>
@@ -902,11 +902,12 @@ const TEAM_COLOR: Record<string, string> = {
 function computeTotals(data: DataModel) {
   const teamTotals: Record<string, number> = {};
   const teamPowers: Record<string, Record<string, number>> = {};
+  const eventTotals: Record<string, Record<string, number>> = {};
   
   for (const t of data.teams) {
     let scoreSum = 0;
-    let powerSum = 0;
     teamPowers[t.id] = {};
+    eventTotals[t.id] = {};
     
     for (const e of data.events) {
       // Calculate team power for this event (sum of all team members' ratings)
@@ -916,19 +917,19 @@ function computeTotals(data: DataModel) {
       }, 0);
       
       teamPowers[t.id][e.id] = teamPower;
-      powerSum += teamPower * (e.weight || 1);
       
-      // Get actual competition score for this event
-      const score = data.scores.byTeamEvent?.[t.id]?.[e.id] ?? 0;
+      // Get actual competition score for this event (max 50 points)
+      const score = Math.min(data.scores.byTeamEvent?.[t.id]?.[e.id] ?? 0, 50);
+      eventTotals[t.id][e.id] = score;
       scoreSum += score;
     }
-    teamTotals[t.id] = scoreSum; // Use actual competition scores, not team powers
+    teamTotals[t.id] = scoreSum; // Total competition points (max 150)
   }
   
-  return { teamTotals, teamPowers };
+  return { teamTotals, teamPowers, eventTotals };
 }
 
-function Leaderboard({ data, onChange, totals, isAdmin }: { data: DataModel; onChange: (d: DataModel) => void; totals: { teamTotals: Record<string, number>; teamPowers: Record<string, Record<string, number>> }; isAdmin: boolean }) {
+function Leaderboard({ data, onChange, totals, isAdmin }: { data: DataModel; onChange: (d: DataModel) => void; totals: { teamTotals: Record<string, number>; teamPowers: Record<string, Record<string, number>>; eventTotals: Record<string, Record<string, number>> }; isAdmin: boolean }) {
   function setPoints(teamId: string, eventId: string, value: number) {
     const next = ensureScoreMap(structuredClone(data));
     next.scores.byTeamEvent[teamId][eventId] = value;
@@ -944,7 +945,10 @@ function Leaderboard({ data, onChange, totals, isAdmin }: { data: DataModel; onC
     <div className="grid gap-6 md:grid-cols-3">
       {/* Score table */}
       <div className="md:col-span-2 rounded-2xl border bg-white p-4 shadow-sm">
-        <h2 className="mb-4 text-lg font-semibold">Competition Scores</h2>
+        <h2 className="mb-4 text-lg font-semibold">Competition Scores (Max 50 per event)</h2>
+        <div className="mb-3 text-sm text-slate-600">
+          WIP: Manual score input. Real competition rules coming soon!
+        </div>
         <div className="overflow-x-auto">
           <table className="min-w-full text-sm">
             <thead>
@@ -953,7 +957,7 @@ function Leaderboard({ data, onChange, totals, isAdmin }: { data: DataModel; onC
                 {data.events.map((e) => (
                   <th key={e.id} className="p-2">
                     {e.emoji} {e.name}
-                    <div className="text-xs text-slate-500">Score</div>
+                    <div className="text-xs text-slate-500">Score (0-50)</div>
                   </th>
                 ))}
                 <th className="p-2">Total</th>
@@ -969,7 +973,7 @@ function Leaderboard({ data, onChange, totals, isAdmin }: { data: DataModel; onC
                     {t.name}
                   </td>
                   {data.events.map((e) => {
-                    const score = data.scores.byTeamEvent?.[t.id]?.[e.id] ?? 0;
+                    const score = Math.min(data.scores.byTeamEvent?.[t.id]?.[e.id] ?? 0, 50);
                     const power = totals.teamPowers[t.id]?.[e.id] ?? 0;
                     const teamMembers = data.people.filter(p => p.teamId === t.id);
                     return (
@@ -984,12 +988,14 @@ function Leaderboard({ data, onChange, totals, isAdmin }: { data: DataModel; onC
                               <button 
                                 className="w-6 h-6 rounded bg-red-100 text-red-600 hover:bg-red-200 text-xs"
                                 onClick={() => inc(t.id, e.id, -1)}
+                                disabled={score <= 0}
                               >
                                 -
                               </button>
                               <button 
                                 className="w-6 h-6 rounded bg-green-100 text-green-600 hover:bg-green-200 text-xs"
                                 onClick={() => inc(t.id, e.id, 1)}
+                                disabled={score >= 50}
                               >
                                 +
                               </button>
@@ -1009,8 +1015,41 @@ function Leaderboard({ data, onChange, totals, isAdmin }: { data: DataModel; onC
 
       {/* Editor */}
       <div className="rounded-2xl border bg-white p-4 shadow-sm">
-        <h3 className="mb-3 text-base font-semibold">Edit T-E-R</h3>
-        <div className="space-y-6">
+        <h3 className="mb-3 text-base font-semibold">Quick Score Input</h3>
+        {!isAdmin && (
+          <div className="mb-3 rounded-lg border bg-amber-50 p-3 text-sm text-amber-800">
+            🔒 Admin access required to edit scores
+          </div>
+        )}
+        <div className={`space-y-4 ${!isAdmin ? 'opacity-50 pointer-events-none' : ''}`}>
+          {data.teams.map((team) => (
+            <div key={team.id} className="space-y-2">
+              <h4 className="font-medium" style={{ color: team.color }}>{team.name}</h4>
+              {data.events.map((event) => {
+                const currentScore = Math.min(data.scores.byTeamEvent?.[team.id]?.[event.id] ?? 0, 50);
+                return (
+                  <div key={event.id} className="flex items-center gap-2">
+                    <span className="text-sm">{event.emoji} {event.name}:</span>
+                    <input
+                      type="number"
+                      min="0"
+                      max="50"
+                      className="w-16 rounded border px-2 py-1 text-center text-sm"
+                      value={currentScore}
+                      onChange={(e) => {
+                        const value = Math.min(Math.max(Number(e.target.value) || 0, 0), 50);
+                        setPoints(team.id, event.id, value);
+                      }}
+                    />
+                    <span className="text-xs text-slate-500">/50</span>
+                  </div>
+                );
+              })}
+            </div>
+          ))}
+        </div>
+        
+        <div className="mt-6 space-y-6">
           <EventEditor data={data} onChange={onChange} />
           <TeamEditor data={data} onChange={onChange} />
         </div>
