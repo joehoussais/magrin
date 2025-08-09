@@ -418,14 +418,15 @@ function WelcomeView({ data, onChange, totals, isAdmin }: {
   totals: { teamTotals: Record<string, number>; teamPowers: Record<string, Record<string, number>>; eventTotals: Record<string, Record<string, number>> };
   isAdmin: boolean;
 }) {
-  // Generate a random player of the morning
+  // Generate a random player of the 4-hour period
   const [playerOfTheMorning] = useState(() => {
     const players = data.people.filter(p => p.teamId); // Only players with teams
     if (players.length === 0) return null;
     
-    // Use date to ensure same player for the day
-    const today = new Date().toDateString();
-    const seed = today.split('').reduce((a, b) => a + b.charCodeAt(0), 0);
+    // Use 4-hour intervals to ensure same player for 4 hours
+    const now = new Date();
+    const fourHourBlock = Math.floor(now.getTime() / (4 * 60 * 60 * 1000)); // 4 hours in milliseconds
+    const seed = fourHourBlock.toString().split('').reduce((a, b) => a + parseInt(b), 0);
     const randomIndex = seed % players.length;
     return players[randomIndex];
   });
@@ -440,18 +441,100 @@ function WelcomeView({ data, onChange, totals, isAdmin }: {
       `"${playerOfTheMorning.name} - the secret weapon every team wishes they had."`,
       `"Legend says ${playerOfTheMorning.name} never loses a game of spirit."`,
       `"${playerOfTheMorning.name} doesn't just play, they inspire."`,
-      `"The morning belongs to ${playerOfTheMorning.name} and their unstoppable vibe."`,
+      `"The spotlight belongs to ${playerOfTheMorning.name} and their unstoppable vibe."`,
       `"${playerOfTheMorning.name} - where talent meets determination."`,
       `"Every team needs a ${playerOfTheMorning.name} to reach greatness."`,
       `"${playerOfTheMorning.name} makes every moment count."`,
       `"The spirit of Magrin lives in ${playerOfTheMorning.name}."`
     ];
     
-    // Use player name to ensure same quote for the day
-    const seed = playerOfTheMorning.name.split('').reduce((a, b) => a + b.charCodeAt(0), 0);
+    // Use 4-hour block to ensure same quote for 4 hours
+    const now = new Date();
+    const fourHourBlock = Math.floor(now.getTime() / (4 * 60 * 60 * 1000));
+    const seed = fourHourBlock.toString().split('').reduce((a, b) => a + parseInt(b), 0);
     const quoteIndex = seed % quotes.length;
     return quotes[quoteIndex];
   });
+
+  // AI search state
+  const [aiSearchResult, setAiSearchResult] = useState<string>("");
+  const [isSearching, setIsSearching] = useState(false);
+
+  // AI search function
+  async function searchPlayerWithAI() {
+    if (!playerOfTheMorning) return;
+    
+    setIsSearching(true);
+    setAiSearchResult("");
+    
+    try {
+      const teamName = data.teams.find(t => t.id === playerOfTheMorning.teamId)?.name || "their team";
+      const playerBio = playerOfTheMorning.bio || "a legendary player";
+      
+      // Check if OpenAI API key is available
+      const openaiApiKey = localStorage.getItem("openai_api_key");
+      
+      if (openaiApiKey) {
+        // Use real OpenAI API
+        const response = await fetch("https://api.openai.com/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${openaiApiKey}`
+          },
+          body: JSON.stringify({
+            model: "gpt-4",
+            messages: [
+              {
+                role: "system",
+                content: "You are a fun, enthusiastic sports analyst who creates engaging, positive profiles about players. Use emojis and be creative!"
+              },
+              {
+                role: "user",
+                content: `Create a fun, engaging AI analysis about ${playerOfTheMorning.name}, who is a player in a team called "${teamName}" with the bio/tagline "${playerBio}". 
+                
+                Make it sound like you searched the internet and found amazing things about them. Include:
+                - Their legendary status
+                - Their team impact
+                - Their unique talents
+                - Their future potential
+                
+                Use emojis, be enthusiastic, and make it feel like a real AI-powered analysis. Keep it under 300 words.`
+              }
+            ],
+            max_tokens: 500,
+            temperature: 0.8
+          })
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          const aiResponse = `🔍 **AI Search Results for ${playerOfTheMorning.name}**\n\n${data.choices[0].message.content}`;
+          setAiSearchResult(aiResponse);
+        } else {
+          throw new Error("OpenAI API request failed");
+        }
+      } else {
+        // Fallback to simulated response
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        
+        const aiResponse = `🔍 **AI Search Results for ${playerOfTheMorning.name}**\n\n` +
+          `Based on my analysis, ${playerOfTheMorning.name} is absolutely incredible! Here's why:\n\n` +
+          `🌟 **Legendary Status**: ${playerOfTheMorning.name} has achieved mythical status in the Magrin community. Their ${playerBio} reputation precedes them wherever they go.\n\n` +
+          `🏆 **Team Impact**: As a key member of ${teamName}, ${playerOfTheMorning.name} brings unmatched energy and strategic brilliance to every competition.\n\n` +
+          `💫 **Unique Talents**: ${playerOfTheMorning.name} possesses that rare combination of skill, charisma, and determination that makes them impossible to ignore.\n\n` +
+          `🎯 **Future Legend**: Sources indicate that ${playerOfTheMorning.name} is destined for greatness, with their name already being whispered in the halls of Magrin legends.\n\n` +
+          `*This AI-powered analysis confirms what we all knew: ${playerOfTheMorning.name} is truly extraordinary!* ✨`;
+        
+        setAiSearchResult(aiResponse);
+      }
+    } catch (error) {
+      console.error("AI search error:", error);
+      setAiSearchResult("🤖 AI search temporarily unavailable. But we know they're amazing!");
+    } finally {
+      setIsSearching(false);
+    }
+  }
 
   const containerRef = useRef<HTMLDivElement>(null);
   const [scale, setScale] = useState(1);
@@ -517,7 +600,7 @@ function WelcomeView({ data, onChange, totals, isAdmin }: {
       {playerOfTheMorning && (
         <div className="rounded-2xl border bg-gradient-to-r from-amber-50 to-orange-50 p-6 shadow-sm">
           <div className="text-center">
-            <div className="mb-2 text-sm font-medium text-amber-700">🌟 Player of the Morning</div>
+            <div className="mb-2 text-sm font-medium text-amber-700">🌟 Player of the Moment</div>
             <div className="mb-4 flex items-center justify-center gap-3">
               <span className="text-4xl">{playerOfTheMorning.emoji || "🙂"}</span>
               <div>
@@ -529,8 +612,31 @@ function WelcomeView({ data, onChange, totals, isAdmin }: {
               </div>
             </div>
             <div className="text-lg italic text-slate-700">{playerQuote}</div>
+            
+            {/* AI Search Button */}
+            <div className="mt-4">
+              <button
+                onClick={searchPlayerWithAI}
+                disabled={isSearching}
+                className={`rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
+                  isSearching 
+                    ? "bg-slate-300 text-slate-500 cursor-not-allowed" 
+                    : "bg-gradient-to-r from-purple-600 to-blue-600 text-white hover:from-purple-700 hover:to-blue-700"
+                }`}
+              >
+                {isSearching ? "🔍 Searching..." : "🤖 AI Search Player"}
+              </button>
+            </div>
+
+            {/* AI Search Results */}
+            {aiSearchResult && (
+              <div className="mt-4 rounded-lg border bg-gradient-to-r from-purple-50 to-blue-50 p-4 text-left">
+                <div className="whitespace-pre-line text-sm text-slate-700">{aiSearchResult}</div>
+              </div>
+            )}
+            
             <div className="mt-3 text-xs text-slate-500">
-              Changes daily • Based on today's date
+              Changes every 4 hours • All honors for 4 hours!
             </div>
           </div>
         </div>
