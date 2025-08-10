@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import RunView from "./components/RunView";
+import { supabase } from "./supabase";
 
 /**
  * Magrin Week — single-file React app (desktop-first, mobile-friendly)
@@ -39,6 +40,14 @@ type Marker = {
   // position as percentages of the image (0-100)
   x: number;
   y: number;
+};
+
+type CalendarEvent = {
+  date: string;
+  time: string;
+  title: string;
+  emoji: string;
+  description?: string;
 };
 
 type DataModel = {
@@ -207,6 +216,65 @@ export default function App() {
   const [showAdminLogin, setShowAdminLogin] = useState(false);
 
   const totals = useMemo(() => computeTotals(data), [data]);
+
+  // Load chat messages from Supabase on component mount
+  useEffect(() => {
+    loadChatMessages();
+  }, []);
+
+  // Set up real-time subscription for chat messages
+  useEffect(() => {
+    const channel = supabase
+      .channel('chat_messages_realtime')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'chat_messages'
+        },
+        (payload) => {
+          console.log('New chat message received:', payload);
+          // Reload chat messages when new ones arrive
+          loadChatMessages();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
+
+  const loadChatMessages = async () => {
+    try {
+      const { data: chatMessages, error } = await supabase
+        .from('chat_messages')
+        .select('*')
+        .order('created_at', { ascending: true });
+
+      if (error) {
+        console.error('Error loading chat messages:', error);
+        return;
+      }
+
+      // Update local data with chat messages from Supabase
+      const updatedData = {
+        ...data,
+        chat: {
+          messages: (chatMessages || []).map(msg => ({
+            id: msg.id,
+            name: msg.name,
+            text: msg.text,
+            ts: new Date(msg.created_at).getTime()
+          }))
+        }
+      };
+      setData(updatedData);
+    } catch (err) {
+      console.error('Error loading chat messages:', err);
+    }
+  };
 
   // Run simple self-tests once (dev only)
   useEffect(() => {
@@ -642,8 +710,8 @@ function WelcomeView({ data, onChange, totals, isAdmin }: {
 
   return (
     <div className="space-y-6">
-      {/* Top Row: Player of the Moment and Announcement */}
-      <div className="grid gap-4 lg:grid-cols-2">
+      {/* Top Row: Player of the Moment, Announcement, and Calendar */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {/* Player of the Moment - Slim Version */}
         {playerOfTheMorning && (
           <div className="rounded-xl border bg-gradient-to-r from-amber-50 to-orange-50 p-3 shadow-sm">
@@ -690,7 +758,7 @@ function WelcomeView({ data, onChange, totals, isAdmin }: {
           </div>
         )}
 
-        {/* Admin Announcement */}
+        {/* Admin Announcement - Moved closer to Player of the Moment */}
         <div className="rounded-xl border bg-gradient-to-r from-blue-50 to-indigo-50 p-3 shadow-sm">
           <div className="flex items-center justify-between mb-2">
             <div className="text-sm font-medium text-blue-700">📢 Announcement</div>
@@ -727,6 +795,12 @@ function WelcomeView({ data, onChange, totals, isAdmin }: {
               </button>
             </div>
           )}
+        </div>
+
+        {/* Fun Calendar - Top Right */}
+        <div className="md:col-span-2 lg:col-span-1">
+          <div className="text-xs text-red-500 mb-1">🎯 CALENDAR SHOULD BE HERE</div>
+          <FunCalendar />
         </div>
       </div>
       
@@ -823,11 +897,12 @@ function WelcomeView({ data, onChange, totals, isAdmin }: {
                 {data.map.markers.map((m) => (
                   <button
                     key={m.id}
-                    className="absolute -translate-x-1/2 -translate-y-full rounded-lg border bg-white/95 px-2 py-1 text-xs shadow-lg hover:scale-105 transition-all duration-200"
+                    className="absolute -translate-x-1/2 -translate-y-full rounded-lg border bg-white/95 px-2 py-1 text-xs shadow-lg hover:scale-105 transition-all duration-200 md:px-2 md:py-1 md:text-xs sm:px-1 sm:py-0.5 sm:text-[10px]"
                     style={{ left: `${m.x}%`, top: `${m.y}%` }}
                   >
                     <span className="mr-1">{m.emoji || "📍"}</span>
-                    {m.name}
+                    <span className="hidden sm:inline">{m.name}</span>
+                    <span className="sm:hidden">{m.name.length > 8 ? m.name.substring(0, 8) + '...' : m.name}</span>
                   </button>
                 ))}
                 {/* Donkey */}
@@ -1184,7 +1259,7 @@ function MapView({ data, onChange }: { data: DataModel; onChange: (d: DataModel)
               {data.map.markers.map((m) => (
                 <button
                   key={m.id}
-                  className={`absolute -translate-x-1/2 -translate-y-full rounded-lg border bg-white/95 px-2 py-1 text-xs shadow-lg transition-all duration-200 hover:scale-110 hover:shadow-xl ${
+                  className={`absolute -translate-x-1/2 -translate-y-full rounded-lg border bg-white/95 px-2 py-1 text-xs shadow-lg transition-all duration-200 hover:scale-110 hover:shadow-xl md:px-2 md:py-1 md:text-xs sm:px-1 sm:py-0.5 sm:text-[10px] ${
                     selected === m.id 
                       ? "ring-2 ring-emerald-500 bg-emerald-50" 
                       : hoveredMarker === m.id 
@@ -1197,7 +1272,8 @@ function MapView({ data, onChange }: { data: DataModel; onChange: (d: DataModel)
                   onMouseLeave={() => setHoveredMarker(null)}
                 >
                   <span className="mr-1">{m.emoji || "📍"}</span>
-                  {m.name}
+                  <span className="hidden sm:inline">{m.name}</span>
+                  <span className="sm:hidden">{m.name.length > 8 ? m.name.substring(0, 8) + '...' : m.name}</span>
                 </button>
               ))}
             </div>
@@ -1944,28 +2020,44 @@ function InfoColumn({ title, subtitle, items, onAdd, onDelete }: {
   );
 }
 
-// ---------- Chat (local only)
+// ---------- Chat (Supabase real-time)
 
 function Chat({ data, onChange }: { data: DataModel; onChange: (d: DataModel) => void }) {
   const [name, setName] = useState<string>(() => localStorage.getItem("magrin_username") || "");
   const [text, setText] = useState("");
+  const [isSending, setIsSending] = useState(false);
 
   useEffect(() => {
     localStorage.setItem("magrin_username", name);
   }, [name]);
 
-  function send() {
-    if (!text.trim()) return;
-    const id = Math.random().toString(36).slice(2, 8);
-    const newMessage = { id, name: name || "Anon", text: text.trim(), ts: Date.now() };
-    onChange({
-      ...data,
-      chat: {
-        ...data.chat,
-        messages: [...data.chat.messages, newMessage]
+
+
+  async function send() {
+    if (!text.trim() || isSending) return;
+    
+    setIsSending(true);
+    try {
+      // Send message to Supabase
+      const { error } = await supabase
+        .from('chat_messages')
+        .insert({
+          name: name || "Anon",
+          text: text.trim()
+        });
+
+      if (error) {
+        console.error('Error sending message:', error);
+        alert('Failed to send message. Please try again.');
+      } else {
+        setText("");
       }
-    });
-    setText("");
+    } catch (err) {
+      console.error('Error sending message:', err);
+      alert('Failed to send message. Please try again.');
+    } finally {
+      setIsSending(false);
+    }
   }
 
   return (
@@ -1986,12 +2078,30 @@ function Chat({ data, onChange }: { data: DataModel; onChange: (d: DataModel) =>
         ))}
       </div>
       <div className="flex gap-2">
-        <input className="flex-1 rounded border px-3 py-2" placeholder="Type a message and press Send" value={text} onChange={(e) => setText(e.target.value)} onKeyDown={(e) => e.key === "Enter" && send()} />
-        <button className="rounded bg-emerald-600 px-4 py-2 text-white" onClick={send}>
-          Send
+        <input 
+          className="flex-1 rounded border px-3 py-2" 
+          placeholder="Type a message and press Send" 
+          value={text} 
+          onChange={(e) => setText(e.target.value)} 
+          onKeyDown={(e) => e.key === "Enter" && send()}
+          disabled={isSending}
+        />
+        <button 
+          className={`rounded px-4 py-2 text-white transition-colors ${
+            isSending 
+              ? "bg-slate-400 cursor-not-allowed" 
+              : "bg-emerald-600 hover:bg-emerald-700"
+          }`} 
+          onClick={send}
+          disabled={isSending}
+        >
+          {isSending ? "Sending..." : "Send"}
         </button>
       </div>
-      <div className="mt-2 text-xs text-slate-500">💬 Shared chat - messages appear for everyone! Set your name above to start chatting.</div>
+      <div className="mt-2 text-xs text-slate-500">
+        💬 Real-time shared chat - messages appear instantly for everyone! Set your name above to start chatting.
+        {isSending && <span className="ml-2 text-emerald-600">🔄 Sending...</span>}
+      </div>
     </div>
   );
 }
@@ -2188,4 +2298,95 @@ function runSelfTests() {
   console.assert(totalsW[mod.teams[2].id] === 6, "Weighted total mismatch for team 2");
 
   console.log("✅ Magrin app self-tests passed");
+}
+
+// ---------- Calendar Component
+
+function FunCalendar() {
+  const calendarEvents: CalendarEvent[] = [
+    { date: "2024-08-14", time: "11:30 AM", title: "Magrin Run", emoji: "🏃", description: "5k race around the property" },
+    { date: "2024-08-14", time: "7:00 PM", title: "Shrek Diner", emoji: "🫘", description: "Onion soup and ogre vibes" },
+    { date: "2024-08-16", time: "7:00 PM", title: "Asterix & Obelix Diner", emoji: "🐗", description: "Wild boar feast" },
+  ];
+
+  const weekDays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  const startDate = new Date("2024-08-10");
+  const endDate = new Date("2024-08-17");
+  
+  const today = new Date();
+  const currentDate = today.toISOString().split('T')[0];
+
+  // Generate calendar days
+  const calendarDays = [];
+  const currentDateObj = new Date(startDate);
+  
+  while (currentDateObj <= endDate) {
+    const dateStr = currentDateObj.toISOString().split('T')[0];
+    const dayEvents = calendarEvents.filter(event => event.date === dateStr);
+    const isToday = dateStr === currentDate;
+    
+    calendarDays.push({
+      date: dateStr,
+      day: currentDateObj.getDate(),
+      dayName: weekDays[currentDateObj.getDay()],
+      events: dayEvents,
+      isToday
+    });
+    
+    currentDateObj.setDate(currentDateObj.getDate() + 1);
+  }
+
+  return (
+    <div className="rounded-xl border-2 border-purple-300 bg-gradient-to-br from-purple-50 to-pink-50 p-3 shadow-sm">
+      <div className="mb-2 flex items-center justify-between">
+        <div className="text-sm font-medium text-purple-700">📅 Magrin Week</div>
+        <div className="text-xs text-purple-600">Aug 10-17</div>
+      </div>
+      
+      <div className="grid grid-cols-7 gap-1 text-xs">
+        {weekDays.map(day => (
+          <div key={day} className="text-center font-medium text-purple-600 py-1">
+            {day}
+          </div>
+        ))}
+        
+        {calendarDays.map((day, index) => (
+          <div 
+            key={day.date} 
+            className={`relative min-h-[35px] rounded-lg border p-1 text-center transition-colors ${
+              day.isToday 
+                ? "bg-purple-200 border-purple-400 shadow-sm" 
+                : "bg-white/80 border-purple-200 hover:bg-white"
+            }`}
+          >
+            <div className={`text-xs font-medium ${day.isToday ? "text-purple-800" : "text-slate-700"}`}>
+              {day.day}
+            </div>
+            
+            {day.events.map((event, eventIndex) => (
+              <div 
+                key={eventIndex}
+                className="mt-0.5 text-[9px] bg-gradient-to-r from-orange-100 to-red-100 border border-orange-200 rounded px-1 py-0.5 text-orange-800 font-medium truncate"
+                title={`${event.time} - ${event.title}${event.description ? `: ${event.description}` : ''}`}
+              >
+                {event.emoji} {event.time}
+              </div>
+            ))}
+          </div>
+        ))}
+      </div>
+      
+      <div className="mt-2 space-y-1">
+        {calendarEvents.map((event, index) => (
+          <div key={index} className="flex items-center gap-2 text-xs">
+            <span className="text-sm">{event.emoji}</span>
+            <div className="flex-1 min-w-0">
+              <div className="font-medium text-slate-800 truncate">{event.title}</div>
+              <div className="text-slate-600 text-[10px]">{event.time}</div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
 }
