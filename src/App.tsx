@@ -58,6 +58,7 @@ type DataModel = {
   chat: {
     messages: { id: string; name: string; text: string; ts: number }[];
   };
+  announcement: string; // Admin announcement for the welcome page
 };
 
 const STORAGE_KEY = "magrin_app_state_v1";
@@ -168,6 +169,7 @@ const DEFAULT_DATA: DataModel = {
       { id: "welcome", name: "System", text: "Welcome to Magrin Week chat! Everyone can send messages here.", ts: Date.now() },
     ],
   },
+  announcement: "", // Empty announcement by default
 };
 
 // Utility to deep-merge score map defaults
@@ -187,6 +189,11 @@ function ensureScoreMap(data: DataModel): DataModel {
         { id: "welcome", name: "System", text: "Welcome to Magrin Week chat! Everyone can send messages here.", ts: Date.now() },
       ],
     };
+  }
+  
+  // Ensure announcement exists
+  if (!copy.announcement) {
+    copy.announcement = "";
   }
   
   return copy;
@@ -223,7 +230,7 @@ export default function App() {
       <div className="mx-auto max-w-7xl px-4 pb-24">
         {tab === "welcome" && <WelcomeView data={data} onChange={setData} totals={totals} isAdmin={isAdmin} />}
         {tab === "teams" && <TeamsView data={data} onChange={setData} totals={totals} isAdmin={isAdmin} />}
-        {tab === "map" && <MapView data={data} onChange={setData} />}
+
         {tab === "leaderboard" && <Leaderboard data={data} onChange={setData} totals={totals as any} isAdmin={isAdmin} />}
         {tab === "run" && <RunView data={data} onChange={setData} isAdmin={isAdmin} />}
         {tab === "people" && <People data={data} onChange={setData} isAdmin={isAdmin} />}
@@ -247,7 +254,7 @@ export default function App() {
 
 // ---------- Tabs
 
-type TabKey = "welcome" | "teams" | "map" | "leaderboard" | "people" | "info" | "chat" | "settings" | "run";
+type TabKey = "welcome" | "teams" | "leaderboard" | "people" | "info" | "chat" | "settings" | "run";
 
 function TopBar({ 
   tab, 
@@ -271,7 +278,6 @@ function TopBar({
     { key: "teams", label: "Teams", emoji: "👥" },
     { key: "leaderboard", label: "T-E-R", emoji: "🏆" },
     { key: "run", label: "Run", emoji: "🏃" },
-    { key: "map", label: "Map", emoji: "🗺️" },
     { key: "people", label: "People", emoji: "🧑‍🌾" },
     { key: "info", label: "Stories", emoji: "📖" },
     { key: "chat", label: "Chat", emoji: "💬" },
@@ -636,51 +642,93 @@ function WelcomeView({ data, onChange, totals, isAdmin }: {
 
   return (
     <div className="space-y-6">
-      {/* Player of the Moment - Slim Version */}
-      {playerOfTheMorning && (
-        <div className="rounded-xl border bg-gradient-to-r from-amber-50 to-orange-50 p-3 shadow-sm">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <span className="text-2xl">{playerOfTheMorning.emoji || "🙂"}</span>
-              <div>
-                <div className="text-sm font-medium text-amber-700">🌟 Player of the Moment</div>
-                <div className="font-semibold text-slate-800">{playerOfTheMorning.name}</div>
-                <div className="text-xs text-slate-600">
-                  {data.teams.find(t => t.id === playerOfTheMorning.teamId)?.name}
-                  {playerOfTheMorning.bio && ` • ${playerOfTheMorning.bio}`}
+      {/* Top Row: Player of the Moment and Announcement */}
+      <div className="grid gap-4 lg:grid-cols-2">
+        {/* Player of the Moment - Slim Version */}
+        {playerOfTheMorning && (
+          <div className="rounded-xl border bg-gradient-to-r from-amber-50 to-orange-50 p-3 shadow-sm">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <span className="text-2xl">{playerOfTheMorning.emoji || "🙂"}</span>
+                <div>
+                  <div className="text-sm font-medium text-amber-700">🌟 Player of the Moment</div>
+                  <div className="font-semibold text-slate-800">{playerOfTheMorning.name}</div>
+                  <div className="text-xs text-slate-600">
+                    {data.teams.find(t => t.id === playerOfTheMorning.teamId)?.name}
+                    {playerOfTheMorning.bio && ` • ${playerOfTheMorning.bio}`}
+                  </div>
                 </div>
+              </div>
+              
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={searchPlayerWithAI}
+                  disabled={isSearching}
+                  className={`rounded-lg px-3 py-1 text-xs font-medium transition-colors ${
+                    isSearching 
+                      ? "bg-slate-300 text-slate-500 cursor-not-allowed" 
+                      : "bg-gradient-to-r from-purple-600 to-blue-600 text-white hover:from-purple-700 hover:to-blue-700"
+                  }`}
+                >
+                  {isSearching ? "🔍..." : "🕵️‍♂️ Search"}
+                </button>
               </div>
             </div>
             
-            <div className="flex items-center gap-2">
-              <button
-                onClick={searchPlayerWithAI}
-                disabled={isSearching}
-                className={`rounded-lg px-3 py-1 text-xs font-medium transition-colors ${
-                  isSearching 
-                    ? "bg-slate-300 text-slate-500 cursor-not-allowed" 
-                    : "bg-gradient-to-r from-purple-600 to-blue-600 text-white hover:from-purple-700 hover:to-blue-700"
-                }`}
-              >
-                {isSearching ? "🔍..." : "🕵️‍♂️ Search"}
-              </button>
+            <div className="mt-2 text-sm italic text-slate-700">{playerQuote}</div>
+            
+            {/* AI Search Results - Compact */}
+            {aiSearchResult && (
+              <div className="mt-2 rounded-lg border bg-gradient-to-r from-purple-50 to-blue-50 p-2 text-left">
+                <div className="whitespace-pre-line text-xs text-slate-700 max-h-32 overflow-y-auto">{aiSearchResult}</div>
+              </div>
+            )}
+            
+            <div className="mt-1 text-xs text-slate-500">
+              Changes every 4 hours • All honors for 4 hours!
             </div>
           </div>
+        )}
+
+        {/* Admin Announcement */}
+        <div className="rounded-xl border bg-gradient-to-r from-blue-50 to-indigo-50 p-3 shadow-sm">
+          <div className="flex items-center justify-between mb-2">
+            <div className="text-sm font-medium text-blue-700">📢 Announcement</div>
+            {isAdmin && (
+              <button
+                onClick={() => {
+                  const newAnnouncement = prompt("Enter announcement:", data.announcement);
+                  if (newAnnouncement !== null) {
+                    onChange({ ...data, announcement: newAnnouncement });
+                  }
+                }}
+                className="rounded-lg px-2 py-1 text-xs font-medium bg-blue-600 text-white hover:bg-blue-700 transition-colors"
+              >
+                ✏️ Edit
+              </button>
+            )}
+          </div>
           
-          <div className="mt-2 text-sm italic text-slate-700">{playerQuote}</div>
-          
-          {/* AI Search Results - Compact */}
-          {aiSearchResult && (
-            <div className="mt-2 rounded-lg border bg-gradient-to-r from-purple-50 to-blue-50 p-2 text-left">
-              <div className="whitespace-pre-line text-xs text-slate-700 max-h-32 overflow-y-auto">{aiSearchResult}</div>
+          {data.announcement ? (
+            <div className="text-sm text-slate-700 whitespace-pre-wrap">{data.announcement}</div>
+          ) : (
+            <div className="text-sm text-slate-500 italic">
+              {isAdmin ? "Click 'Edit' to add an announcement" : "No announcements"}
             </div>
           )}
           
-          <div className="mt-1 text-xs text-slate-500">
-            Changes every 4 hours • All honors for 4 hours!
-          </div>
+          {isAdmin && data.announcement && (
+            <div className="mt-2">
+              <button
+                onClick={() => onChange({ ...data, announcement: "" })}
+                className="text-xs text-red-600 hover:text-red-800 transition-colors"
+              >
+                Clear announcement
+              </button>
+            </div>
+          )}
         </div>
-      )}
+      </div>
       
       <div className="grid gap-6 lg:grid-cols-2">
         {/* Map Section */}
