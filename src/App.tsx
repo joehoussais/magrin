@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
+import RunView from "./components/RunView";
 
 /**
  * Magrin Week — single-file React app (desktop-first, mobile-friendly)
@@ -224,6 +225,7 @@ export default function App() {
         {tab === "teams" && <TeamsView data={data} onChange={setData} totals={totals} isAdmin={isAdmin} />}
         {tab === "map" && <MapView data={data} onChange={setData} />}
         {tab === "leaderboard" && <Leaderboard data={data} onChange={setData} totals={totals as any} isAdmin={isAdmin} />}
+        {tab === "run" && <RunView />}
         {tab === "people" && <People data={data} onChange={setData} isAdmin={isAdmin} />}
         {tab === "info" && <Info data={data} onChange={setData} />}
         {tab === "chat" && <Chat data={data} onChange={setData} />}
@@ -245,7 +247,7 @@ export default function App() {
 
 // ---------- Tabs
 
-type TabKey = "welcome" | "teams" | "map" | "leaderboard" | "people" | "info" | "chat" | "settings";
+type TabKey = "welcome" | "teams" | "map" | "leaderboard" | "people" | "info" | "chat" | "settings" | "run";
 
 function TopBar({ 
   tab, 
@@ -268,6 +270,7 @@ function TopBar({
     { key: "welcome", label: "Welcome", emoji: "🏠" },
     { key: "teams", label: "Teams", emoji: "👥" },
     { key: "leaderboard", label: "T-E-R", emoji: "🏆" },
+    { key: "run", label: "Run", emoji: "🏃" },
     { key: "map", label: "Map", emoji: "🗺️" },
     { key: "people", label: "People", emoji: "🧑‍🌾" },
     { key: "info", label: "Stories", emoji: "📖" },
