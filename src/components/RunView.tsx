@@ -6,6 +6,7 @@ import Notes from './Notes';
 export default function RunView() {
   return (
     <div className="space-y-6 py-6">
+      {/* Magrin Ekiden Run Page */}
       {/* Mobile Layout - Single Column */}
       <div className="lg:hidden space-y-6">
         <Rules />
