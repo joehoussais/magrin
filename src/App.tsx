@@ -68,6 +68,7 @@ type DataModel = {
     messages: { id: string; name: string; text: string; ts: number }[];
   };
   announcement: string; // Admin announcement for the welcome page
+  calendarEvents?: CalendarEvent[]; // Calendar events
 };
 
 const STORAGE_KEY = "magrin_app_state_v1";
@@ -179,6 +180,11 @@ const DEFAULT_DATA: DataModel = {
     ],
   },
   announcement: "", // Empty announcement by default
+  calendarEvents: [
+    { date: "2024-08-14", time: "11:30 AM", title: "Magrin Run", emoji: "🏃", description: "5k race around the property" },
+    { date: "2024-08-14", time: "7:00 PM", title: "Shrek Diner", emoji: "🫘", description: "Onion soup and ogre vibes" },
+    { date: "2024-08-16", time: "7:00 PM", title: "Asterix & Obelix Diner", emoji: "🐗", description: "Wild boar feast" },
+  ],
 };
 
 // Utility to deep-merge score map defaults
@@ -799,8 +805,7 @@ function WelcomeView({ data, onChange, totals, isAdmin }: {
 
         {/* Fun Calendar - Top Right */}
         <div className="md:col-span-2 lg:col-span-1">
-          <div className="text-xs text-red-500 mb-1">🎯 CALENDAR SHOULD BE HERE</div>
-          <FunCalendar />
+          <FunCalendar data={data} onChange={onChange} isAdmin={isAdmin} />
         </div>
       </div>
       
@@ -2302,90 +2307,158 @@ function runSelfTests() {
 
 // ---------- Calendar Component
 
-function FunCalendar() {
-  const calendarEvents: CalendarEvent[] = [
+function FunCalendar({ data, onChange, isAdmin }: { 
+  data: DataModel; 
+  onChange: (d: DataModel) => void; 
+  isAdmin: boolean; 
+}) {
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [newEvent, setNewEvent] = useState({
+    title: "",
+    emoji: "🎉",
+    date: "",
+    time: ""
+  });
+
+  // Get events from data model (or use defaults if not set)
+  const calendarEvents: CalendarEvent[] = data.calendarEvents || [
     { date: "2024-08-14", time: "11:30 AM", title: "Magrin Run", emoji: "🏃", description: "5k race around the property" },
     { date: "2024-08-14", time: "7:00 PM", title: "Shrek Diner", emoji: "🫘", description: "Onion soup and ogre vibes" },
     { date: "2024-08-16", time: "7:00 PM", title: "Asterix & Obelix Diner", emoji: "🐗", description: "Wild boar feast" },
   ];
 
-  const weekDays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-  const startDate = new Date("2024-08-10");
-  const endDate = new Date("2024-08-17");
-  
-  const today = new Date();
-  const currentDate = today.toISOString().split('T')[0];
+  // Sort events by date and time
+  const sortedEvents = [...calendarEvents].sort((a, b) => {
+    const dateA = new Date(`${a.date} ${a.time}`);
+    const dateB = new Date(`${b.date} ${b.time}`);
+    return dateA.getTime() - dateB.getTime();
+  });
 
-  // Generate calendar days
-  const calendarDays = [];
-  const currentDateObj = new Date(startDate);
-  
-  while (currentDateObj <= endDate) {
-    const dateStr = currentDateObj.toISOString().split('T')[0];
-    const dayEvents = calendarEvents.filter(event => event.date === dateStr);
-    const isToday = dateStr === currentDate;
+  const addEvent = () => {
+    if (!newEvent.title || !newEvent.date || !newEvent.time) return;
     
-    calendarDays.push({
-      date: dateStr,
-      day: currentDateObj.getDate(),
-      dayName: weekDays[currentDateObj.getDay()],
-      events: dayEvents,
-      isToday
+    const event: CalendarEvent = {
+      date: newEvent.date,
+      time: newEvent.time,
+      title: newEvent.title,
+      emoji: newEvent.emoji,
+      description: ""
+    };
+
+    const updatedEvents = [...calendarEvents, event];
+    onChange({
+      ...data,
+      calendarEvents: updatedEvents
     });
-    
-    currentDateObj.setDate(currentDateObj.getDate() + 1);
-  }
+
+    setNewEvent({ title: "", emoji: "🎉", date: "", time: "" });
+    setShowAddForm(false);
+  };
+
+  const removeEvent = (index: number) => {
+    const updatedEvents = calendarEvents.filter((_, i) => i !== index);
+    onChange({
+      ...data,
+      calendarEvents: updatedEvents
+    });
+  };
 
   return (
     <div className="rounded-xl border-2 border-purple-300 bg-gradient-to-br from-purple-50 to-pink-50 p-3 shadow-sm">
-      <div className="mb-2 flex items-center justify-between">
-        <div className="text-sm font-medium text-purple-700">📅 Magrin Week</div>
-        <div className="text-xs text-purple-600">Aug 10-17</div>
-      </div>
-      
-      <div className="grid grid-cols-7 gap-1 text-xs">
-        {weekDays.map(day => (
-          <div key={day} className="text-center font-medium text-purple-600 py-1">
-            {day}
-          </div>
-        ))}
-        
-        {calendarDays.map((day, index) => (
-          <div 
-            key={day.date} 
-            className={`relative min-h-[35px] rounded-lg border p-1 text-center transition-colors ${
-              day.isToday 
-                ? "bg-purple-200 border-purple-400 shadow-sm" 
-                : "bg-white/80 border-purple-200 hover:bg-white"
-            }`}
+      <div className="mb-3 flex items-center justify-between">
+        <div className="text-sm font-medium text-purple-700">📅 Upcoming Events</div>
+        {isAdmin && (
+          <button
+            onClick={() => setShowAddForm(!showAddForm)}
+            className="text-xs bg-purple-600 text-white px-2 py-1 rounded hover:bg-purple-700 transition-colors"
           >
-            <div className={`text-xs font-medium ${day.isToday ? "text-purple-800" : "text-slate-700"}`}>
-              {day.day}
-            </div>
-            
-            {day.events.map((event, eventIndex) => (
-              <div 
-                key={eventIndex}
-                className="mt-0.5 text-[9px] bg-gradient-to-r from-orange-100 to-red-100 border border-orange-200 rounded px-1 py-0.5 text-orange-800 font-medium truncate"
-                title={`${event.time} - ${event.title}${event.description ? `: ${event.description}` : ''}`}
-              >
-                {event.emoji} {event.time}
-              </div>
-            ))}
-          </div>
-        ))}
+            {showAddForm ? "✕" : "+"}
+          </button>
+        )}
       </div>
       
-      <div className="mt-2 space-y-1">
-        {calendarEvents.map((event, index) => (
-          <div key={index} className="flex items-center gap-2 text-xs">
-            <span className="text-sm">{event.emoji}</span>
-            <div className="flex-1 min-w-0">
-              <div className="font-medium text-slate-800 truncate">{event.title}</div>
-              <div className="text-slate-600 text-[10px]">{event.time}</div>
+      {/* Add Event Form */}
+      {showAddForm && isAdmin && (
+        <div className="mb-3 p-2 bg-white rounded border">
+          <div className="space-y-2 text-xs">
+            <input
+              type="text"
+              placeholder="Event name"
+              value={newEvent.title}
+              onChange={(e) => setNewEvent({ ...newEvent, title: e.target.value })}
+              className="w-full px-2 py-1 border rounded text-xs"
+            />
+            <div className="flex gap-2">
+              <input
+                type="text"
+                placeholder="Emoji"
+                value={newEvent.emoji}
+                onChange={(e) => setNewEvent({ ...newEvent, emoji: e.target.value })}
+                className="w-16 px-2 py-1 border rounded text-xs"
+              />
+              <input
+                type="date"
+                value={newEvent.date}
+                onChange={(e) => setNewEvent({ ...newEvent, date: e.target.value })}
+                className="flex-1 px-2 py-1 border rounded text-xs"
+              />
+              <input
+                type="time"
+                value={newEvent.time}
+                onChange={(e) => setNewEvent({ ...newEvent, time: e.target.value })}
+                className="w-20 px-2 py-1 border rounded text-xs"
+              />
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={addEvent}
+                disabled={!newEvent.title || !newEvent.date || !newEvent.time}
+                className="flex-1 bg-green-600 text-white px-2 py-1 rounded text-xs hover:bg-green-700 disabled:bg-gray-300"
+              >
+                Add Event
+              </button>
+              <button
+                onClick={() => setShowAddForm(false)}
+                className="px-2 py-1 border rounded text-xs hover:bg-gray-50"
+              >
+                Cancel
+              </button>
             </div>
           </div>
-        ))}
+        </div>
+      )}
+      
+      {/* Events List */}
+      <div className="space-y-2">
+        {sortedEvents.length === 0 ? (
+          <div className="text-xs text-gray-500 text-center py-2">
+            No events scheduled
+          </div>
+        ) : (
+          sortedEvents.map((event, index) => (
+            <div key={index} className="flex items-center gap-2 text-xs bg-white rounded p-2 border">
+              <span className="text-lg">{event.emoji}</span>
+              <div className="flex-1 min-w-0">
+                <div className="font-medium text-slate-800 truncate">{event.title}</div>
+                <div className="text-slate-600 text-[10px]">
+                  {new Date(event.date).toLocaleDateString('en-US', { 
+                    month: 'short', 
+                    day: 'numeric' 
+                  })} • {event.time}
+                </div>
+              </div>
+              {isAdmin && (
+                <button
+                  onClick={() => removeEvent(index)}
+                  className="text-red-500 hover:text-red-700 text-xs"
+                  title="Remove event"
+                >
+                  ✕
+                </button>
+              )}
+            </div>
+          ))
+        )}
       </div>
     </div>
   );
