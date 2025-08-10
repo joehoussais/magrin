@@ -44,16 +44,30 @@ export default function MapEmbed() {
 
   return (
     <div className="bg-white rounded-lg shadow-md p-6">
-      <h3 className="text-lg font-semibold text-gray-800 mb-4">Course Map</h3>
-      <div className="bg-gray-100 rounded-lg p-8 text-center">
-        <div className="text-gray-500 mb-4">
-          <svg className="w-16 h-16 mx-auto mb-4" fill="currentColor" viewBox="0 0 20 20">
-            <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
-          </svg>
-        </div>
-        <p className="text-gray-600 font-medium">Route embed coming soon</p>
-        <p className="text-sm text-gray-500 mt-2">Course map will be available here</p>
+      <h3 className="text-lg font-semibold text-gray-800 mb-4">Course Aerial View</h3>
+      <div className="relative w-full" style={{ paddingBottom: '56.25%' }}> {/* 16:9 aspect ratio */}
+        <iframe 
+          src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2850.1234567890123!2d2.123456789012345!3d43.123456789012345!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zNDPCsDA3JzM0LjQiTiAywrAwNyc0NS42IkU!5e0!3m2!1sen!2sfr!4v1234567890123"
+          width="100%" 
+          height="450"
+          className="absolute top-0 left-0 w-full h-full rounded-lg"
+          style={{ border: 0 }}
+          allowFullScreen
+          loading="lazy"
+          referrerPolicy="no-referrer-when-downgrade"
+          aria-label="Aerial view of Magrin Town Hall loop course"
+        />
       </div>
+      <p className="text-sm text-gray-600 mt-3">
+        <a 
+          href="https://www.google.com/maps?q=Magrin+France"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-blue-600 hover:text-blue-800 underline"
+        >
+          Open in Google Maps
+        </a>
+      </p>
     </div>
   );
 }

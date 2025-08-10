@@ -225,7 +225,7 @@ export default function App() {
         {tab === "teams" && <TeamsView data={data} onChange={setData} totals={totals} isAdmin={isAdmin} />}
         {tab === "map" && <MapView data={data} onChange={setData} />}
         {tab === "leaderboard" && <Leaderboard data={data} onChange={setData} totals={totals as any} isAdmin={isAdmin} />}
-        {tab === "run" && <RunView />}
+        {tab === "run" && <RunView data={data} onChange={setData} isAdmin={isAdmin} />}
         {tab === "people" && <People data={data} onChange={setData} isAdmin={isAdmin} />}
         {tab === "info" && <Info data={data} onChange={setData} />}
         {tab === "chat" && <Chat data={data} onChange={setData} />}

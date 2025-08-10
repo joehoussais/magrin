@@ -50,6 +50,16 @@ export default function Rules() {
             <span>Extra fun awards may include fastest lap, best relay hand off, and most positions gained on a lap. These are shown on the leaderboard and announced at the ceremony.</span>
           </li>
         </ul>
+
+        <div className="bg-blue-50 rounded-lg p-4 border border-blue-200 mt-4">
+          <h3 className="text-lg font-medium text-gray-800 mb-2">👥 Race Supervision</h3>
+          <p className="text-gray-700 mb-2">
+            <strong>Isabelle and Eric</strong> will be supervising the race and counting the number of laps completed by each team.
+          </p>
+          <p className="text-sm text-gray-600">
+            Official results will be determined by their lap counting and timing verification.
+          </p>
+        </div>
       </div>
     </div>
   );

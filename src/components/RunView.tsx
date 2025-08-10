@@ -2,17 +2,25 @@ import MapEmbed from './MapEmbed';
 import SegmentEmbed from './SegmentEmbed';
 import Rules from './Rules';
 import Notes from './Notes';
+import ScoringSystem from './ScoringSystem';
+import RunAdmin from './RunAdmin';
 
-export default function RunView() {
+export default function RunView({ data, onChange, isAdmin }: { 
+  data: any; 
+  onChange: (d: any) => void; 
+  isAdmin: boolean; 
+}) {
   return (
     <div className="space-y-6 py-6">
       {/* Magrin Ekiden Run Page */}
       {/* Mobile Layout - Single Column */}
       <div className="lg:hidden space-y-6">
         <Rules />
-        <MapEmbed />
         <SegmentEmbed />
+        <MapEmbed />
         <Notes />
+        <ScoringSystem />
+        <RunAdmin data={data} onChange={onChange} isAdmin={isAdmin} />
       </div>
 
       {/* Desktop Layout - Two Columns */}
@@ -21,12 +29,14 @@ export default function RunView() {
         <div className="space-y-6">
           <Rules />
           <Notes />
+          <ScoringSystem />
+          <RunAdmin data={data} onChange={onChange} isAdmin={isAdmin} />
         </div>
 
         {/* Right Column - Sticky Embeds */}
         <div className="sticky top-24 space-y-6">
-          <MapEmbed />
           <SegmentEmbed />
+          <MapEmbed />
         </div>
       </div>
     </div>
