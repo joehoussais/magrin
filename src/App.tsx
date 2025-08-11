@@ -193,6 +193,9 @@ export default function App() {
 
   // Load data from Supabase on component mount
   useEffect(() => {
+    console.log('App mounted, loading data from Supabase...');
+    console.log('Supabase URL:', (import.meta as any).env.VITE_SUPABASE_URL);
+    console.log('Using fallback URL:', (import.meta as any).env.VITE_SUPABASE_URL === 'https://your-project.supabase.co');
     loadDataFromSupabase();
     loadChatMessages();
   }, []);
@@ -236,6 +239,8 @@ export default function App() {
 
   const loadDataFromSupabase = async () => {
     try {
+      console.log('Starting to load data from Supabase...');
+      
       // Load teams, events, people, scores, and map markers
       const [teamsResult, eventsResult, peopleResult, scoresResult, markersResult] = await Promise.all([
         supabase.from('teams').select('*').order('name'),
@@ -250,6 +255,10 @@ export default function App() {
       if (peopleResult.error) console.error('Error loading people:', peopleResult.error);
       if (scoresResult.error) console.error('Error loading scores:', scoresResult.error);
       if (markersResult.error) console.error('Error loading markers:', markersResult.error);
+
+      console.log('Teams loaded:', teamsResult.data?.length || 0, 'teams');
+      console.log('People loaded:', peopleResult.data?.length || 0, 'people');
+      console.log('Events loaded:', eventsResult.data?.length || 0, 'events');
 
       // Transform and update data
       const newData: DataModel = {
