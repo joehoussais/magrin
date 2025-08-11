@@ -1938,8 +1938,15 @@ function Chat({ data, onChange }: { data: DataModel; onChange: (d: DataModel) =>
 
       if (error) {
         console.error('Error sending message:', error);
-        alert('Failed to send message. Please try again.');
+        console.error('Error details:', {
+          code: error.code,
+          message: error.message,
+          details: error.details,
+          hint: error.hint
+        });
+        alert(`Failed to send message: ${error.message}. Please try again.`);
       } else {
+        console.log('Message sent successfully!');
         setText("");
       }
     } catch (err) {

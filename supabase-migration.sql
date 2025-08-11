@@ -149,6 +149,9 @@ CREATE POLICY "Allow admin write access to scores" ON scores FOR ALL USING (true
 CREATE POLICY "Allow admin write access to map_markers" ON map_markers FOR ALL USING (true);
 CREATE POLICY "Allow admin write access to chat_messages" ON chat_messages FOR ALL USING (true);
 
+-- Add specific INSERT policy for chat messages (allow anyone to insert)
+CREATE POLICY "Allow public insert to chat_messages" ON chat_messages FOR INSERT WITH CHECK (true);
+
 CREATE POLICY "Allow admin write access to app_settings" ON app_settings FOR ALL USING (true);
 
 -- Create function to update updated_at timestamp
