@@ -3,6 +3,14 @@ import { createClient } from '@supabase/supabase-js'
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://your-project.supabase.co'
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'your-anon-key'
 
+// Debug environment variables
+console.log('=== SUPABASE CONFIG ===');
+console.log('VITE_SUPABASE_URL:', supabaseUrl);
+console.log('VITE_SUPABASE_ANON_KEY (first 20 chars):', supabaseAnonKey.substring(0, 20) + '...');
+console.log('Using fallback URL:', supabaseUrl === 'https://your-project.supabase.co');
+console.log('Using fallback key:', supabaseAnonKey === 'your-anon-key');
+console.log('========================');
+
 export const supabase = createClient(supabaseUrl, supabaseAnonKey)
 
 // Database types

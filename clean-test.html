@@ -1,29 +1,28 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Supabase Connection Test</title>
+    <title>Clean Supabase Test</title>
     <script src="https://unpkg.com/@supabase/supabase-js@2.39.0"></script>
 </head>
 <body>
-    <h1>Supabase Connection Test</h1>
+    <h1>Clean Supabase Connection Test</h1>
     <div id="status">Testing connection...</div>
     <div id="result"></div>
 
     <script>
+        // Clean key without any potential encoding issues
         const supabaseUrl = 'https://ctdkmurfubcjvkriawgl.supabase.co';
-        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN0ZGttdWJjanZrcmlhd2dsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ4MjYzNDMsImV4cCI6MjA3MDQwMjM0M30.uecdNDGdpWU9Q4yhOPcLbq0_8BtOUxiDtlJ-z2m1pdc';
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN0ZGttdXJmdWJjanZrcmlhd2dsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ4MjYzNDMsImV4cCI6MjA3MDQwMjM0M30.uecdNDGdpWU9Q4yhOPcLbq0_8BtOUxiDtlJ-z2m1pdc';
 
         document.getElementById('status').textContent = `Testing connection to: ${supabaseUrl}`;
+        console.log('Key length:', supabaseKey.length);
+        console.log('Key starts with:', supabaseKey.substring(0, 20));
 
         const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
-        console.log('Supabase client created:', !!supabase);
 
         async function testConnection() {
             try {
-                console.log('Testing with key:', supabaseKey.substring(0, 50) + '...');
-                console.log('Testing with URL:', supabaseUrl);
-                
-                // Test basic connection
+                console.log('Testing connection...');
                 const { data, error } = await supabase
                     .from('teams')
                     .select('*')
@@ -33,21 +32,25 @@
                     document.getElementById('result').innerHTML = `
                         <h3>❌ Connection Failed</h3>
                         <p><strong>Error:</strong> ${error.message}</p>
-                        <p><strong>Code:</strong> ${error.code}</p>
+                        <p><strong>Code:</strong> ${error.code || 'None'}</p>
                         <p><strong>Details:</strong> ${error.details || 'None'}</p>
+                        <p><strong>Hint:</strong> ${error.hint || 'None'}</p>
                     `;
+                    console.error('Full error:', error);
                 } else {
                     document.getElementById('result').innerHTML = `
                         <h3>✅ Connection Successful!</h3>
                         <p>Connected to Supabase successfully</p>
                         <p>Teams found: ${data?.length || 0}</p>
                     `;
+                    console.log('Success! Data:', data);
                 }
             } catch (err) {
                 document.getElementById('result').innerHTML = `
                     <h3>❌ Connection Error</h3>
                     <p><strong>Error:</strong> ${err.message}</p>
                 `;
+                console.error('Exception:', err);
             }
         }
 
