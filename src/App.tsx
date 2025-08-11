@@ -195,7 +195,9 @@ export default function App() {
   useEffect(() => {
     console.log('App mounted, loading data from Supabase...');
     console.log('Supabase URL:', (import.meta as any).env.VITE_SUPABASE_URL);
+    console.log('Supabase Key (first 20 chars):', (import.meta as any).env.VITE_SUPABASE_ANON_KEY?.substring(0, 20) + '...');
     console.log('Using fallback URL:', (import.meta as any).env.VITE_SUPABASE_URL === 'https://your-project.supabase.co');
+    console.log('Using fallback key:', (import.meta as any).env.VITE_SUPABASE_ANON_KEY === 'your-anon-key');
     loadDataFromSupabase();
     loadChatMessages();
   }, []);
