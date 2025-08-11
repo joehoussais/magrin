@@ -1866,7 +1866,7 @@ function People({ data, onChange, isAdmin }: { data: DataModel; onChange: (d: Da
   );
 }
 
-// ---------- Info
+
 
 
 
@@ -2010,13 +2010,12 @@ function Settings({ data, onChange, isAdmin }: { data: DataModel; onChange: (d: 
           <button
             className="w-full rounded border px-3 py-2 text-orange-600 hover:bg-orange-50"
             onClick={() => {
-              if (confirm("Force update players list?")) {
-                localStorage.removeItem("magrin_app_state_v1");
+              if (confirm("Force reload from database?")) {
                 window.location.reload();
               }
             }}
           >
-            Force Update Players
+            Force Reload from Database
           </button>
         </div>
         {jsonOpen && <JsonImport onApply={(obj) => onChange(ensureScoreMap(obj))} />}
