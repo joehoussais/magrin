@@ -238,38 +238,7 @@ export const chatService = {
   }
 }
 
-// Info Items
-export const infoService = {
-  async getAll() {
-    const { data, error } = await supabase
-      .from('info_items')
-      .select('*')
-      .order('created_at', { ascending: false })
-    
-    if (error) throw error
-    return data
-  },
 
-  async create(item: { category: string; title: string; body: string; emoji?: string; date?: string }) {
-    const { data, error } = await supabase
-      .from('info_items')
-      .insert(item)
-      .select()
-      .single()
-    
-    if (error) throw error
-    return data
-  },
-
-  async delete(id: string) {
-    const { error } = await supabase
-      .from('info_items')
-      .delete()
-      .eq('id', id)
-    
-    if (error) throw error
-  }
-}
 
 // App Settings
 export const settingsService = {

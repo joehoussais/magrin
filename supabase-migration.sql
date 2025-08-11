@@ -55,15 +55,7 @@ CREATE TABLE IF NOT EXISTS chat_messages (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
-CREATE TABLE IF NOT EXISTS info_items (
-  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  category TEXT NOT NULL,
-  title TEXT NOT NULL,
-  body TEXT NOT NULL,
-  emoji TEXT,
-  date DATE,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
+
 
 CREATE TABLE IF NOT EXISTS app_settings (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
@@ -84,42 +76,36 @@ CREATE TABLE IF NOT EXISTS admin_users (
 CREATE INDEX IF NOT EXISTS idx_scores_team_event ON scores(team_id, event_id);
 CREATE INDEX IF NOT EXISTS idx_people_team ON people(team_id);
 CREATE INDEX IF NOT EXISTS idx_chat_messages_created_at ON chat_messages(created_at);
-CREATE INDEX IF NOT EXISTS idx_info_items_category ON info_items(category);
+
 
 -- Insert default data
-INSERT INTO teams (id, name, color) VALUES 
-  ('red-team', 'Team Rouge', '#ef4444'),
-  ('blue-team', 'Team Bleu', '#3b82f6'),
-  ('green-team', 'Team Vert', '#10b981')
-ON CONFLICT (id) DO NOTHING;
+INSERT INTO teams (name, color) VALUES 
+  ('Team Rouge', '#ef4444'),
+  ('Team Bleu', '#3b82f6'),
+  ('Team Vert', '#10b981');
 
-INSERT INTO events (id, name, emoji, weight) VALUES 
-  ('tennis-event', 'Tennis', '🎾', 1),
-  ('running-event', 'Running', '🏃', 1),
-  ('chess-event', 'Chess', '♟️', 1)
-ON CONFLICT (id) DO NOTHING;
+INSERT INTO events (name, emoji, weight) VALUES 
+  ('Tennis', '🎾', 1),
+  ('Running', '🏃', 1),
+  ('Chess', '♟️', 1);
 
-INSERT INTO map_markers (id, name, emoji, type, description, x, y) VALUES 
-  ('swamp', 'Shrek''s swamp', '🪵', 'place', 'No bread for the ogre.', 16, 20),
-  ('main-house', 'Main house', '🏠', 'place', 'Kitchen, salon, board games.', 38, 33),
-  ('pool', 'Olympic pool', '🏊', 'fun', 'Sunbeds; shade after 16:00.', 35, 53),
-  ('dining', 'Dining hall', '🍽️', 'place', 'Group meals & briefings.', 52, 55),
-  ('bar', 'Bar de Magrin', '🍹', 'place', 'Aperitivo HQ.', 64, 77),
-  ('tennis', 'Tennis court', '🎾', 'sport', 'T-E-R matches hourly.', 78, 20),
-  ('chickens', 'Chicken land', '🐔', 'animals', 'Please close at sunset.', 86, 45),
-  ('sheep', 'Sheep land', '🐑', 'animals', 'No bread; fresh water nearby.', 82, 60),
-  ('church', 'Église Saint-Salvy', '⛪', 'place', 'Quiet zone.', 86, 85),
-  ('start', '5k start line', '🏁', 'sport', 'Clockwise loop.', 18, 47),
-  ('town', 'Towards Magrin town hall', '➡️', 'direction', 'Road to village.', 18, 88)
-ON CONFLICT (id) DO NOTHING;
+INSERT INTO map_markers (name, emoji, type, description, x, y) VALUES 
+  ('Shrek''s swamp', '🪵', 'place', 'No bread for the ogre.', 16, 20),
+  ('Main house', '🏠', 'place', 'Kitchen, salon, board games.', 38, 33),
+  ('Olympic pool', '🏊', 'fun', 'Sunbeds; shade after 16:00.', 35, 53),
+  ('Dining hall', '🍽️', 'place', 'Group meals & briefings.', 52, 55),
+  ('Bar de Magrin', '🍹', 'place', 'Aperitivo HQ.', 64, 77),
+  ('Tennis court', '🎾', 'sport', 'T-E-R matches hourly.', 78, 20),
+  ('Chicken land', '🐔', 'animals', 'Please close at sunset.', 86, 45),
+  ('Sheep land', '🐑', 'animals', 'No bread; fresh water nearby.', 82, 60),
+  ('Église Saint-Salvy', '⛪', 'place', 'Quiet zone.', 86, 85),
+  ('5k start line', '🏁', 'sport', 'Clockwise loop.', 18, 47),
+  ('Towards Magrin town hall', '➡️', 'direction', 'Road to village.', 18, 88);
 
-INSERT INTO chat_messages (id, name, text) VALUES 
-  ('welcome-msg', 'System', 'Welcome to Magrin Week chat! Everyone can send messages here.')
-ON CONFLICT (id) DO NOTHING;
+INSERT INTO chat_messages (name, text) VALUES 
+  ('System', 'Welcome to Magrin Week chat! Everyone can send messages here.');
 
-INSERT INTO info_items (id, category, title, body, emoji, date) VALUES 
-  ('welcome-notice', 'notices', 'Welcome', 'Pick a team, set your name in Chat, have fun.', '👋', CURRENT_DATE)
-ON CONFLICT (id) DO NOTHING;
+
 
 INSERT INTO app_settings (key, value) VALUES 
   ('map_image_url', '"magrin-app-enlarged.png"'),
@@ -141,7 +127,7 @@ ALTER TABLE people ENABLE ROW LEVEL SECURITY;
 ALTER TABLE scores ENABLE ROW LEVEL SECURITY;
 ALTER TABLE map_markers ENABLE ROW LEVEL SECURITY;
 ALTER TABLE chat_messages ENABLE ROW LEVEL SECURITY;
-ALTER TABLE info_items ENABLE ROW LEVEL SECURITY;
+
 ALTER TABLE app_settings ENABLE ROW LEVEL SECURITY;
 ALTER TABLE admin_users ENABLE ROW LEVEL SECURITY;
 
@@ -152,7 +138,7 @@ CREATE POLICY "Allow public read access to people" ON people FOR SELECT USING (t
 CREATE POLICY "Allow public read access to scores" ON scores FOR SELECT USING (true);
 CREATE POLICY "Allow public read access to map_markers" ON map_markers FOR SELECT USING (true);
 CREATE POLICY "Allow public read access to chat_messages" ON chat_messages FOR SELECT USING (true);
-CREATE POLICY "Allow public read access to info_items" ON info_items FOR SELECT USING (true);
+
 CREATE POLICY "Allow public read access to app_settings" ON app_settings FOR SELECT USING (true);
 
 -- Create policies for admin write access (simplified for now)
@@ -162,7 +148,7 @@ CREATE POLICY "Allow admin write access to people" ON people FOR ALL USING (true
 CREATE POLICY "Allow admin write access to scores" ON scores FOR ALL USING (true);
 CREATE POLICY "Allow admin write access to map_markers" ON map_markers FOR ALL USING (true);
 CREATE POLICY "Allow admin write access to chat_messages" ON chat_messages FOR ALL USING (true);
-CREATE POLICY "Allow admin write access to info_items" ON info_items FOR ALL USING (true);
+
 CREATE POLICY "Allow admin write access to app_settings" ON app_settings FOR ALL USING (true);
 
 -- Create function to update updated_at timestamp

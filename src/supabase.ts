@@ -159,35 +159,7 @@ export interface Database {
           created_at?: string
         }
       }
-      info_items: {
-        Row: {
-          id: string
-          category: string
-          title: string
-          body: string
-          emoji: string | null
-          date: string | null
-          created_at: string
-        }
-        Insert: {
-          id?: string
-          category: string
-          title: string
-          body: string
-          emoji?: string | null
-          date?: string | null
-          created_at?: string
-        }
-        Update: {
-          id?: string
-          category?: string
-          title?: string
-          body?: string
-          emoji?: string | null
-          date?: string | null
-          created_at?: string
-        }
-      }
+
       app_settings: {
         Row: {
           id: string

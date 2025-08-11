@@ -37,7 +37,7 @@ export function useSupabaseData() {
         scores,
         markers,
         chatMessages,
-        infoItems,
+
         mapImageUrl,
         announcement
       ] = await Promise.all([
@@ -47,7 +47,7 @@ export function useSupabaseData() {
         supabase.from('scores').select('*'),
         supabase.from('map_markers').select('*').order('name'),
         supabase.from('chat_messages').select('*').order('created_at', { ascending: true }),
-        supabase.from('info_items').select('*').order('created_at', { ascending: false }),
+
         supabase.from('app_settings').select('value').eq('key', 'map_image_url').single(),
         supabase.from('app_settings').select('value').eq('key', 'announcement').single()
       ])
@@ -81,11 +81,7 @@ export function useSupabaseData() {
             y: m.y
           }))
         },
-        info: {
-          animals: (infoItems.data || []).filter(item => item.category === 'animals'),
-          places: (infoItems.data || []).filter(item => item.category === 'places'),
-          notices: (infoItems.data || []).filter(item => item.category === 'notices')
-        },
+
         chat: {
           messages: (chatMessages.data || []).map(msg => ({
             id: msg.id,

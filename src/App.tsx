@@ -4,8 +4,8 @@ import { supabase } from "./supabase";
 
 /**
  * Magrin Week — single-file React app (desktop-first, mobile-friendly)
- * - Tabs: Map, Leaderboard (T-E-R), People, Info, Chat, Settings
- * - Everything persists to localStorage (no backend). Export/Import JSON in Settings.
+ * - Tabs: Map, Leaderboard (T-E-R), People, Chat, Settings
+ * - Everything persists to Supabase (shared database). Export/Import JSON in Settings.
  * - Paste your custom map image in Settings. Default is /magrin-map.png.
  *
  * Drop-in:
@@ -59,11 +59,7 @@ type DataModel = {
   events: Event[]; // T, E, R by default
   scores: ScoreState;
   people: Person[];
-  info: {
-    animals: { title: string; body: string; emoji?: string }[];
-    places: { title: string; body: string; emoji?: string }[];
-    notices: { title: string; body: string; emoji?: string; date?: string }[];
-  };
+
   chat: {
     messages: { id: string; name: string; text: string; ts: number }[];
   };
@@ -71,7 +67,7 @@ type DataModel = {
   calendarEvents?: CalendarEvent[]; // Calendar events
 };
 
-const STORAGE_KEY = "magrin_app_state_v1";
+
 
 // Admin configuration - 2 admins supportés
 const ADMIN_PASSWORDS = ["magrino2025", "admin2025"];
@@ -122,14 +118,6 @@ const DEFAULT_DATA: DataModel = {
       bio: "Handles playlists",
       ratings: { tennis: 3, running: 5, chess: 2 }
     },
-    { 
-      id: "p3", 
-      name: "Marc", 
-      teamId: "green", 
-      emoji: "🦅", 
-      bio: "Grill master",
-      ratings: { tennis: 5, running: 4, chess: 1 }
-    },
     { id: "p4", name: "Maxime", emoji: "👨‍💻", bio: "", ratings: { tennis: 3, running: 3, chess: 3 } },
     { id: "p5", name: "Raphaël", emoji: "🎨", bio: "", ratings: { tennis: 3, running: 3, chess: 3 } },
     { id: "p6", name: "Romana", emoji: "👩‍🎤", bio: "", ratings: { tennis: 3, running: 3, chess: 3 } },
@@ -163,17 +151,7 @@ const DEFAULT_DATA: DataModel = {
     { id: "p34", name: "Achille Degas", emoji: "🎨", bio: "", ratings: { tennis: 3, running: 3, chess: 3 } },
     { id: "p35", name: "Ferdinand", emoji: "🎪", bio: "", ratings: { tennis: 3, running: 3, chess: 3 } },
   ],
-  info: {
-    animals: [
-      { title: "Chickens", body: "Collect eggs before 10:00 & after 18:00.", emoji: "🐔" },
-      { title: "Sheep", body: "No bread. Fresh water near the fence.", emoji: "🐑" },
-    ],
-    places: [
-      { title: "Kitchen", body: "Dishwasher tabs under the sink.", emoji: "🍽️" },
-      { title: "Fire Pit", body: "Quiet hours 23:00–08:00.", emoji: "🔥" },
-    ],
-    notices: [{ title: "Welcome", body: "Pick a team, set your name in Chat, have fun.", emoji: "👋", date: new Date().toISOString().slice(0, 10) }],
-  },
+
   chat: {
     messages: [
       { id: "welcome", name: "System", text: "Welcome to Magrin Week chat! Everyone can send messages here.", ts: Date.now() },
@@ -216,15 +194,16 @@ function ensureScoreMap(data: DataModel): DataModel {
 
 // ---------- Root App
 export default function App() {
-  const [data, setData] = useLocalData();
+  const [data, setData] = useState<DataModel>(() => ensureScoreMap(DEFAULT_DATA));
   const [tab, setTab] = useState<TabKey>("welcome");
   const [isAdmin, setIsAdmin] = useState(false);
   const [showAdminLogin, setShowAdminLogin] = useState(false);
 
   const totals = useMemo(() => computeTotals(data), [data]);
 
-  // Load chat messages from Supabase on component mount
+  // Load data from Supabase on component mount
   useEffect(() => {
+    loadDataFromSupabase();
     loadChatMessages();
   }, []);
 
@@ -251,6 +230,52 @@ export default function App() {
       supabase.removeChannel(channel);
     };
   }, []);
+
+  const loadDataFromSupabase = async () => {
+    try {
+      // Load teams, events, people, scores, and map markers
+      const [teamsResult, eventsResult, peopleResult, scoresResult, markersResult] = await Promise.all([
+        supabase.from('teams').select('*').order('name'),
+        supabase.from('events').select('*').order('name'),
+        supabase.from('people').select('*').order('name'),
+        supabase.from('scores').select('*'),
+        supabase.from('map_markers').select('*').order('name')
+      ]);
+
+      if (teamsResult.error) console.error('Error loading teams:', teamsResult.error);
+      if (eventsResult.error) console.error('Error loading events:', eventsResult.error);
+      if (peopleResult.error) console.error('Error loading people:', peopleResult.error);
+      if (scoresResult.error) console.error('Error loading scores:', scoresResult.error);
+      if (markersResult.error) console.error('Error loading markers:', markersResult.error);
+
+      // Transform and update data
+      const newData: DataModel = {
+        ...data,
+        teams: teamsResult.data || DEFAULT_DATA.teams,
+        events: eventsResult.data || DEFAULT_DATA.events,
+        people: (peopleResult.data || []).map(p => ({
+          ...p,
+          teamId: p.team_id,
+          ratings: p.ratings || {}
+        })),
+        scores: {
+          byTeamEvent: (scoresResult.data || []).reduce((acc, score) => {
+            if (!acc[score.team_id]) acc[score.team_id] = {};
+            acc[score.team_id][score.event_id] = score.points;
+            return acc;
+          }, {} as Record<string, Record<string, number>>)
+        },
+        map: {
+          ...data.map,
+          markers: markersResult.data || DEFAULT_DATA.map.markers
+        }
+      };
+
+      setData(ensureScoreMap(newData));
+    } catch (err) {
+      console.error('Error loading data from Supabase:', err);
+    }
+  };
 
   const loadChatMessages = async () => {
     try {
@@ -308,7 +333,7 @@ export default function App() {
         {tab === "leaderboard" && <Leaderboard data={data} onChange={setData} totals={totals as any} isAdmin={isAdmin} />}
         {tab === "run" && <RunView data={data} onChange={setData} isAdmin={isAdmin} />}
         {tab === "people" && <People data={data} onChange={setData} isAdmin={isAdmin} />}
-        {tab === "info" && <Info data={data} onChange={setData} />}
+
         {tab === "chat" && <Chat data={data} onChange={setData} />}
         {tab === "settings" && <Settings data={data} onChange={setData} isAdmin={isAdmin} />}
       </div>
@@ -328,7 +353,7 @@ export default function App() {
 
 // ---------- Tabs
 
-type TabKey = "welcome" | "teams" | "leaderboard" | "people" | "info" | "chat" | "settings" | "run";
+type TabKey = "welcome" | "teams" | "leaderboard" | "people" | "chat" | "settings" | "run";
 
 function TopBar({ 
   tab, 
@@ -353,7 +378,6 @@ function TopBar({
     { key: "leaderboard", label: "T-E-R", emoji: "🏆" },
     { key: "run", label: "Run", emoji: "🏃" },
     { key: "people", label: "People", emoji: "🧑‍🌾" },
-    { key: "info", label: "Stories", emoji: "📖" },
     { key: "chat", label: "Chat", emoji: "💬" },
     { key: "settings", label: "Settings", emoji: "⚙️" },
   ];
@@ -990,35 +1014,7 @@ function WelcomeView({ data, onChange, totals, isAdmin }: {
 
 // ---------- Local storage state
 
-function useLocalData() {
-  const [data, setData] = useState<DataModel>(() => {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (raw) {
-        const parsed = JSON.parse(raw);
-        // Force update the image URL to use the new file name
-        if (parsed.map?.imageUrl === "/magrin-map.png") {
-          parsed.map.imageUrl = "/magrin-app-enlarged.png";
-        }
-        if (parsed.map?.imageUrl === "/magrin-app.png") {
-          parsed.map.imageUrl = "/magrin-app-enlarged.png";
-        }
-        // Force update to include new players
-        if (!parsed.people || parsed.people.length < 35) {
-          console.log("Updating players list - clearing localStorage");
-          localStorage.removeItem(STORAGE_KEY);
-          return ensureScoreMap(DEFAULT_DATA);
-        }
-        return ensureScoreMap(parsed);
-      }
-    } catch {}
-    return ensureScoreMap(DEFAULT_DATA);
-  });
-  useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-  }, [data]);
-  return [data, setData] as const;
-}
+
 
 // ---------- Teams
 
@@ -1872,158 +1868,7 @@ function People({ data, onChange, isAdmin }: { data: DataModel; onChange: (d: Da
 
 // ---------- Info
 
-function Info({ data, onChange }: { data: DataModel; onChange: (d: DataModel) => void }) {
-  return (
-    <div className="space-y-6">
-      <div className="text-center">
-        <h1 className="text-3xl font-bold text-slate-800 mb-2">📖 Magrin Stories & Legends</h1>
-        <p className="text-slate-600">Share the latest gossip, legends, and stories about Magrin! Everyone can contribute.</p>
-      </div>
-      
-      <div className="grid gap-6 md:grid-cols-3">
-        <InfoColumn 
-          title="🐾 Animal Tales" 
-          subtitle="Wild encounters and pet stories"
-          items={data.info.animals} 
-          onAdd={(x) => onChange({ ...data, info: { ...data.info, animals: [...data.info.animals, x] } })} 
-          onDelete={(i) => onChange({ ...data, info: { ...data.info, animals: data.info.animals.filter((_, idx) => idx !== i) } })} 
-        />
-        <InfoColumn 
-          title="🏰 Magical Places" 
-          subtitle="Hidden spots and legendary locations"
-          items={data.info.places} 
-          onAdd={(x) => onChange({ ...data, info: { ...data.info, places: [...data.info.places, x] } })} 
-          onDelete={(i) => onChange({ ...data, info: { ...data.info, places: data.info.places.filter((_, idx) => idx !== i) } })} 
-        />
-        <InfoColumn 
-          title="💭 Gossip & News" 
-          subtitle="Latest rumors and announcements"
-          items={data.info.notices} 
-          onAdd={(x) => onChange({ ...data, info: { ...data.info, notices: [...data.info.notices, x] } })} 
-          onDelete={(i) => onChange({ ...data, info: { ...data.info, notices: data.info.notices.filter((_, idx) => idx !== i) } })} 
-        />
-      </div>
-    </div>
-  );
-}
 
-function InfoColumn({ title, subtitle, items, onAdd, onDelete }: { 
-  title: string; 
-  subtitle?: string;
-  items: { title: string; body: string; emoji?: string; date?: string }[]; 
-  onAdd: (x: any) => void; 
-  onDelete: (i: number) => void 
-}) {
-  const [t, setT] = useState("");
-  const [b, setB] = useState("");
-  const [e, setE] = useState("");
-  const [showForm, setShowForm] = useState(false);
-  
-  return (
-    <div className="rounded-2xl border bg-white p-4 shadow-sm">
-      <div className="mb-4">
-        <h2 className="text-lg font-semibold">{title}</h2>
-        {subtitle && <p className="text-sm text-slate-500">{subtitle}</p>}
-      </div>
-      
-      <div className="space-y-3 mb-4">
-        {items.map((it, i) => (
-          <div key={i} className="rounded-xl border p-3 shadow-sm hover:shadow-md transition-shadow">
-            <div className="mb-2 flex items-center justify-between">
-              <div className="font-medium text-slate-800">
-                {it.emoji && <span className="mr-2">{it.emoji}</span>}
-                {it.title}
-              </div>
-              <button 
-                className="rounded-full w-6 h-6 flex items-center justify-center text-xs text-red-500 hover:bg-red-50 hover:text-red-700 transition-colors" 
-                onClick={() => onDelete(i)}
-                title="Delete story"
-              >
-                ×
-              </button>
-            </div>
-            {it.date && <div className="text-xs text-slate-400 mb-2">{it.date}</div>}
-            <p className="text-sm text-slate-700 leading-relaxed">{it.body}</p>
-          </div>
-        ))}
-      </div>
-      
-      {!showForm ? (
-        <button
-          onClick={() => setShowForm(true)}
-          className="w-full rounded-lg border-2 border-dashed border-slate-300 px-4 py-3 text-sm text-slate-600 hover:border-slate-400 hover:text-slate-700 transition-colors"
-        >
-          ✨ Add New Story
-        </button>
-      ) : (
-        <div className="space-y-3 rounded-lg border bg-slate-50 p-3">
-          <input
-            type="text"
-            placeholder="Story title..."
-            value={t}
-            onChange={(e) => setT(e.target.value)}
-            className="w-full rounded border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
-          />
-          <div className="flex gap-2">
-            <input
-              type="text"
-              placeholder="Emoji (optional)"
-              value={e}
-              onChange={(e) => setE(e.target.value)}
-              className="flex-1 rounded border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
-            />
-            <button
-              onClick={() => setE("")}
-              className="px-3 py-2 text-sm text-slate-500 hover:text-slate-700"
-            >
-              Clear
-            </button>
-          </div>
-          <textarea
-            placeholder="Tell your story... (gossip, legend, or news)"
-            value={b}
-            onChange={(e) => setB(e.target.value)}
-            className="w-full rounded border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
-            rows={4}
-          />
-          <div className="flex gap-2">
-            <button
-              onClick={() => {
-                if (t.trim() && b.trim()) {
-                  onAdd({ 
-                    title: t.trim(), 
-                    body: b.trim(), 
-                    emoji: e.trim() || undefined, 
-                    date: new Date().toLocaleDateString() 
-                  });
-                  setT("");
-                  setB("");
-                  setE("");
-                  setShowForm(false);
-                }
-              }}
-              disabled={!t.trim() || !b.trim()}
-              className="flex-1 rounded bg-emerald-600 px-3 py-2 text-sm text-white hover:bg-emerald-700 disabled:bg-slate-300 disabled:text-slate-500 transition-colors"
-            >
-              📖 Share Story
-            </button>
-            <button
-              onClick={() => {
-                setShowForm(false);
-                setT("");
-                setB("");
-                setE("");
-              }}
-              className="px-3 py-2 text-sm text-slate-500 hover:text-slate-700"
-            >
-              Cancel
-            </button>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
 
 // ---------- Chat (Supabase real-time)
 
