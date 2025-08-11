@@ -163,3 +163,6 @@ $$ language 'plpgsql';
 -- Create trigger for scores table
 CREATE TRIGGER update_scores_updated_at BEFORE UPDATE ON scores
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+-- Enable real-time replication for chat messages
+ALTER PUBLICATION supabase_realtime ADD TABLE chat_messages;

@@ -199,24 +199,37 @@ export default function App() {
 
   // Set up real-time subscription for chat messages
   useEffect(() => {
+    console.log('Setting up real-time chat subscription...');
+    
     const channel = supabase
       .channel('chat_messages_realtime')
       .on(
         'postgres_changes',
         {
-          event: 'INSERT',
+          event: '*', // Listen to all events (INSERT, UPDATE, DELETE)
           schema: 'public',
           table: 'chat_messages'
         },
         (payload) => {
-          console.log('New chat message received:', payload);
-          // Reload chat messages when new ones arrive
+          console.log('Chat message change received:', payload);
+          // Reload chat messages when any changes arrive
           loadChatMessages();
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        console.log('Chat subscription status:', status);
+        
+        // If subscription fails, fall back to polling
+        if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+          console.log('Real-time subscription failed, falling back to polling...');
+          // Set up polling every 5 seconds as fallback
+          const pollInterval = setInterval(loadChatMessages, 5000);
+          return () => clearInterval(pollInterval);
+        }
+      });
 
     return () => {
+      console.log('Cleaning up chat subscription...');
       supabase.removeChannel(channel);
     };
   }, []);
@@ -269,6 +282,7 @@ export default function App() {
 
   const loadChatMessages = async () => {
     try {
+      console.log('Loading chat messages from Supabase...');
       const { data: chatMessages, error } = await supabase
         .from('chat_messages')
         .select('*')
@@ -278,6 +292,8 @@ export default function App() {
         console.error('Error loading chat messages:', error);
         return;
       }
+
+      console.log('Chat messages loaded:', chatMessages?.length || 0, 'messages');
 
       // Update local data with chat messages from Supabase
       const updatedData = {
@@ -292,6 +308,7 @@ export default function App() {
         }
       };
       setData(updatedData);
+      console.log('Chat data updated in local state');
     } catch (err) {
       console.error('Error loading chat messages:', err);
     }
@@ -404,7 +421,7 @@ function TopBar({
         </div>
       </div>
       <div className="md:hidden border-t bg-white">
-        <div className="mx-auto grid max-w-7xl grid-cols-6">
+        <div className="mx-auto grid max-w-7xl grid-cols-7">
           {tabs.map((t) => (
             <button key={t.key} onClick={() => setTab(t.key)} className={`p-2 text-xs ${tab === t.key ? "text-emerald-700" : "text-slate-600"}`}>
               <div>{t.emoji}</div>
@@ -699,6 +716,27 @@ function WelcomeView({ data, onChange, totals, isAdmin }: {
     setDrag(null);
   }
 
+  // Touch support for mobile
+  function onTouchStart(e: React.TouchEvent) {
+    e.preventDefault();
+    if (e.touches.length === 1) {
+      const touch = e.touches[0];
+      setDrag({ x: touch.clientX - offset.x, y: touch.clientY - offset.y });
+    }
+  }
+
+  function onTouchMove(e: React.TouchEvent) {
+    e.preventDefault();
+    if (!drag || e.touches.length !== 1) return;
+    const touch = e.touches[0];
+    setOffset({ x: touch.clientX - drag.x, y: touch.clientY - drag.y });
+  }
+
+  function onTouchEnd(e: React.TouchEvent) {
+    e.preventDefault();
+    setDrag(null);
+  }
+
   // Double click to reset
   function onDoubleClick(e: React.MouseEvent) {
     e.preventDefault();
@@ -884,8 +922,11 @@ function WelcomeView({ data, onChange, totals, isAdmin }: {
             onMouseDown={onMouseDown}
             onMouseMove={onMouseMove}
             onMouseUp={onMouseUp}
+            onTouchStart={onTouchStart}
+            onTouchMove={onTouchMove}
+            onTouchEnd={onTouchEnd}
             onDoubleClick={onDoubleClick}
-            className="relative h-[60vh] w-full overflow-hidden rounded-xl border bg-slate-50 cursor-grab active:cursor-grabbing"
+            className="relative h-[60vh] w-full overflow-hidden rounded-xl border bg-slate-50 cursor-grab active:cursor-grabbing touch-none"
           >
             <div
               className="absolute left-1/2 top-1/2"
