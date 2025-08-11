@@ -91,65 +91,55 @@ const DEFAULT_DATA: DataModel = {
     ],
   },
   teams: [
-    { id: "red", name: "Team Rouge", color: "#ef4444" },
-    { id: "blue", name: "Team Bleu", color: "#3b82f6" },
-    { id: "green", name: "Team Vert", color: "#10b981" },
+    { id: "pawnstorm", name: "Pawnstorm Express", color: "#ef4444" },
+    { id: "grandslam", name: "Grand Slam Jam", color: "#3b82f6" },
+    { id: "knightmoves", name: "Knight Moves", color: "#10b981" },
+    { id: "baseline", name: "Baseline Blazers", color: "#f59e0b" },
+    { id: "checkcharge", name: "Check & Charge", color: "#8b5cf6" },
+    { id: "fullcourt", name: "Full Court Runners", color: "#ec4899" },
+    { id: "smashdash", name: "Smash & Dash", color: "#06b6d4" },
   ],
   events: [
-    { id: "tennis", name: "Tennis", emoji: "🎾", weight: 1 },
-    { id: "running", name: "Running", emoji: "🏃", weight: 1 },
     { id: "chess", name: "Chess", emoji: "♟️", weight: 1 },
+    { id: "tennis", name: "Tennis", emoji: "🎾", weight: 1 },
+    { id: "run", name: "Run", emoji: "🏃", weight: 1 },
   ],
   scores: { byTeamEvent: {} },
   people: [
-    { 
-      id: "p1", 
-      name: "Joseph", 
-      teamId: "red", 
-      emoji: "🦊", 
-      bio: "Chief vibe officer",
-      ratings: { tennis: 4, running: 3, chess: 5 }
-    },
-    { 
-      id: "p2", 
-      name: "Alice", 
-      teamId: "blue", 
-      emoji: "🦋", 
-      bio: "Handles playlists",
-      ratings: { tennis: 3, running: 5, chess: 2 }
-    },
-    { id: "p4", name: "Maxime", emoji: "👨‍💻", bio: "", ratings: { tennis: 3, running: 3, chess: 3 } },
-    { id: "p5", name: "Raphaël", emoji: "🎨", bio: "", ratings: { tennis: 3, running: 3, chess: 3 } },
-    { id: "p6", name: "Romana", emoji: "👩‍🎤", bio: "", ratings: { tennis: 3, running: 3, chess: 3 } },
-    { id: "p7", name: "Sébastien Moreaux", emoji: "🏃‍♂️", bio: "", ratings: { tennis: 3, running: 3, chess: 3 } },
-    { id: "p8", name: "Solenn", emoji: "🌺", bio: "", ratings: { tennis: 3, running: 3, chess: 3 } },
-    { id: "p9", name: "Stanislas Denet", emoji: "🎯", bio: "", ratings: { tennis: 3, running: 3, chess: 3 } },
-    { id: "p10", name: "Stanislas P", emoji: "🎪", bio: "", ratings: { tennis: 3, running: 3, chess: 3 } },
-    { id: "p11", name: "Aurélien", emoji: "⚡", bio: "", ratings: { tennis: 3, running: 3, chess: 3 } },
-    { id: "p12", name: "Byron", emoji: "🎸", bio: "", ratings: { tennis: 3, running: 3, chess: 3 } },
-    { id: "p13", name: "Chloe Vancaeyzeele", emoji: "🦋", bio: "", ratings: { tennis: 3, running: 3, chess: 3 } },
-    { id: "p14", name: "Clara", emoji: "🌟", bio: "", ratings: { tennis: 3, running: 3, chess: 3 } },
-    { id: "p15", name: "Eric", emoji: "🔧", bio: "", ratings: { tennis: 3, running: 3, chess: 3 } },
-    { id: "p16", name: "Eugé", emoji: "🎭", bio: "", ratings: { tennis: 3, running: 3, chess: 3 } },
-    { id: "p17", name: "Felix Larochelle", emoji: "🎪", bio: "", ratings: { tennis: 3, running: 3, chess: 3 } },
-    { id: "p18", name: "Isabelle", emoji: "🌹", bio: "", ratings: { tennis: 3, running: 3, chess: 3 } },
-    { id: "p19", name: "JEN", emoji: "🎨", bio: "", ratings: { tennis: 3, running: 3, chess: 3 } },
-    { id: "p20", name: "Paul HEILWeck", emoji: "🎪", bio: "", ratings: { tennis: 3, running: 3, chess: 3 } },
-    { id: "p21", name: "Jean Tho", emoji: "🎯", bio: "", ratings: { tennis: 3, running: 3, chess: 3 } },
-    { id: "p22", name: "Gabriel Lebrun", emoji: "🎸", bio: "", ratings: { tennis: 3, running: 3, chess: 3 } },
-    { id: "p23", name: "Mimeline", emoji: "🦄", bio: "", ratings: { tennis: 3, running: 3, chess: 3 } },
-    { id: "p24", name: "Maxine", emoji: "⚡", bio: "", ratings: { tennis: 3, running: 3, chess: 3 } },
-    { id: "p25", name: "Jean Petitdemange", emoji: "🎪", bio: "", ratings: { tennis: 3, running: 3, chess: 3 } },
-    { id: "p26", name: "Laurent Sicard", emoji: "🎯", bio: "", ratings: { tennis: 3, running: 3, chess: 3 } },
-    { id: "p27", name: "Clement Allouard", emoji: "🎸", bio: "", ratings: { tennis: 3, running: 3, chess: 3 } },
-    { id: "p28", name: "Adèle", emoji: "🌺", bio: "", ratings: { tennis: 3, running: 3, chess: 3 } },
-    { id: "p29", name: "Adrien Brunswick", emoji: "🎨", bio: "", ratings: { tennis: 3, running: 3, chess: 3 } },
-    { id: "p30", name: "Alice Brunswick", emoji: "🦋", bio: "", ratings: { tennis: 3, running: 3, chess: 3 } },
-    { id: "p31", name: "Arthur Brunswick", emoji: "🎯", bio: "", ratings: { tennis: 3, running: 3, chess: 3 } },
-    { id: "p32", name: "Conio Cudennec", emoji: "🎪", bio: "", ratings: { tennis: 3, running: 3, chess: 3 } },
-    { id: "p33", name: "Damien", emoji: "⚡", bio: "", ratings: { tennis: 3, running: 3, chess: 3 } },
-    { id: "p34", name: "Achille Degas", emoji: "🎨", bio: "", ratings: { tennis: 3, running: 3, chess: 3 } },
-    { id: "p35", name: "Ferdinand", emoji: "🎪", bio: "", ratings: { tennis: 3, running: 3, chess: 3 } },
+    // Team 1 — Pawnstorm Express
+    { id: "jean", name: "Jean", teamId: "pawnstorm", emoji: "♟️", bio: "Chess master", ratings: { chess: 1, tennis: 5, run: 5 } },
+    { id: "thomas", name: "Thomas", teamId: "pawnstorm", emoji: "🎯", bio: "All-rounder", ratings: { chess: 3, tennis: 2, run: 3 } },
+    { id: "paul", name: "Paul", teamId: "pawnstorm", emoji: "🎪", bio: "Team spirit", ratings: { chess: 1, tennis: 1, run: 1 } },
+    
+    // Team 2 — Grand Slam Jam
+    { id: "clement", name: "Clément", teamId: "grandslam", emoji: "🎾", bio: "Tennis pro", ratings: { chess: 4, tennis: 4, run: 5 } },
+    { id: "max", name: "Max", teamId: "grandslam", emoji: "🏃", bio: "Speed demon", ratings: { chess: 1, tennis: 3, run: 4 } },
+    { id: "eugenie-a", name: "Eugénie A", teamId: "grandslam", emoji: "🌟", bio: "Rising star", ratings: { chess: 1, tennis: 2, run: 2 } },
+    
+    // Team 3 — Knight Moves
+    { id: "heloise", name: "Héloïse", teamId: "knightmoves", emoji: "🦋", bio: "Graceful player", ratings: { chess: 1, tennis: 1, run: 1 } },
+    { id: "raph", name: "Raph", teamId: "knightmoves", emoji: "🎨", bio: "Creative mind", ratings: { chess: 1, tennis: 2, run: 2 } },
+    { id: "arthur", name: "Arthur", teamId: "knightmoves", emoji: "👑", bio: "Champion", ratings: { chess: 5, tennis: 5, run: 4 } },
+    
+    // Team 4 — Baseline Blazers
+    { id: "alice", name: "Alice", teamId: "baseline", emoji: "🦋", bio: "Consistent performer", ratings: { chess: 4, tennis: 4, run: 4 } },
+    { id: "jo", name: "Jo", teamId: "baseline", emoji: "⚡", bio: "High energy", ratings: { chess: 4, tennis: 2, run: 5 } },
+    { id: "laurent", name: "Laurent", teamId: "baseline", emoji: "🎯", bio: "Precision player", ratings: { chess: 1, tennis: 1, run: 2 } },
+    
+    // Team 5 — Check & Charge
+    { id: "paula", name: "Paula", teamId: "checkcharge", emoji: "🌺", bio: "Strategic thinker", ratings: { chess: 2, tennis: 1, run: 3 } },
+    { id: "ferdi", name: "Ferdi", teamId: "checkcharge", emoji: "🎪", bio: "Entertainer", ratings: { chess: 1, tennis: 3, run: 1 } },
+    { id: "damien", name: "Damien", teamId: "checkcharge", emoji: "🔧", bio: "Technical expert", ratings: { chess: 3, tennis: 4, run: 3 } },
+    
+    // Team 6 — Full Court Runners
+    { id: "maxine", name: "Maxine", teamId: "fullcourt", emoji: "⚡", bio: "Speed queen", ratings: { chess: 2, tennis: 3, run: 1 } },
+    { id: "adrien", name: "Adrien", teamId: "fullcourt", emoji: "🎨", bio: "Artistic player", ratings: { chess: 5, tennis: 5, run: 4 } },
+    { id: "eugenie-b", name: "Eugénie B", teamId: "fullcourt", emoji: "🌟", bio: "Bright talent", ratings: { chess: 1, tennis: 1, run: 3 } },
+    
+    // Team 7 — Smash & Dash
+    { id: "seb", name: "Seb", teamId: "smashdash", emoji: "🏃‍♂️", bio: "Endurance runner", ratings: { chess: 1, tennis: 2, run: 3 } },
+    { id: "gab", name: "Gab", teamId: "smashdash", emoji: "🎸", bio: "Rhythm player", ratings: { chess: 1, tennis: 1, run: 2 } },
+    { id: "eric", name: "Eric", teamId: "smashdash", emoji: "🔧", bio: "Tennis specialist", ratings: { chess: 4, tennis: 5, run: 1 } },
   ],
 
   chat: {
