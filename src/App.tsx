@@ -403,7 +403,7 @@ function TopBar({
     <div className="sticky top-0 z-20 border-b bg-white/80 backdrop-blur">
       <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3">
         <div className="flex items-center gap-3">
-          <span className="text-2xl">🌾</span>
+          <img src="/shrek.png" alt="Shrek" className="h-8 w-8 rounded-full" />
           <h1 className="text-xl font-semibold">Magrin Week</h1>
           <span className="text-sm text-slate-500">Tennis - Running - Chess</span>
         </div>
